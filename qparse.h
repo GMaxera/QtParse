@@ -12,6 +12,7 @@
 #include <QVariantMap>
 
 class QNetworkAccessManager;
+class QNetworkRequest;
 class QNetworkReply;
 class OperationData;
 class QFile;
@@ -38,6 +39,14 @@ public:
 	//! return the singleton instance of CloudInterface
 	static QParse* instance();
 public slots:
+	//! Perform a get request on PARSE
+	QParseReply* get( QParseRequest* request );
+	//! Perform a post request on PARSE
+	QParseReply* post( QParseRequest* request );
+	//! Perform a put request on PARSE
+	QParseReply* put( QParseRequest* request );
+
+
 	/*! create a new user
 	 *  \param username the username used for login
 	 *  \param password to validate the user on login
@@ -85,6 +94,11 @@ private:
 	//! save the information about the last logged user into settings
 	void saveLoggedUser();
 
+	/*! process a queued QParseRequest and create the corresponding
+	 *  QNetworkRequest to send over internet for the reply to PARSE
+	 */
+	void processOperationsQueue();
+
 	/*! execute a POST request on PARSE
 	 *  \param endPoint is the url of the REST API of PARSE after https://api.parse.com/1/
 	 *  \param operation is the JSON encoded data or query to execute on PARSE
@@ -126,17 +140,34 @@ private:
 
 	//! the newtork manager for sending requests to cloud backend
 	QNetworkAccessManager* net;
-	//! the map of operation data pending on the cloud backend
-	QMap<QNetworkReply*, OperationData*> operations;
-
-	/*! the file to upload to PARSE
-	 * !! NEVER CHANGE THIS FILE UNTIL THE POST HAS BEEN COMPLETED
-	 *
-	 * OOUUCCCHHH !! WHAT WILL HAPPEN IF TWO UPLOAD WILL BE TRIGGERED AT THE SAME TIME ???
-	 *				THIS INFORMATION SHOULD BE SAVED INTO OPERATION PERFORMED
+	//! inner private class for storing data about operations on Parse
+	class OperationData {
+	public:
+		OperationData()
+			: parseRequest(NULL)
+			, parseReply(NULL)
+			, netRequest(NULL)
+			, netMethod(GET)
+			, dataToPost()
+			, fileToPost(NULL)
+			, mimeDb() { }
+		QParseRequest* parseRequest;
+		QParseReply* parseReply;
+		QNetworkRequest* netRequest;
+		enum NetMethod { GET, PUT, POST, DELETE, GET_FILE, POST_FILE };
+		NetMethod netMethod;
+		QJsonObject dataToPost;
+		QFile* fileToPost;
+		QMimeDatabase mimeDb;
+	};
+	/*! the queue of the operation to process
+	 *  A parseRequest will be put in this queue and as soon as possible
+	 *  will be processed and created a netRequest to send over internet
 	 */
-	QFile* fileToPost;
-	QMimeDatabase mimeDb;
+	QQueue<OperationData*> operationsQueue;
+	//! the map of operation sent to Parse waiting for a netReply to process
+	QMap<QNetworkReply*, OperationData*> operationsPending;
+
 };
 
 #endif // QPARSE_H

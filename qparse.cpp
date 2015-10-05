@@ -33,8 +33,89 @@ QParse* QParse::instance() {
 	return singleton;
 }
 
-QParseReply* get( QParseRequest* request ) {
+QParseReply* QParse::get( QParseRequest* request ) {
+	QParseReply* reply = new QParseReply(request, this);
+	reply->setIsJSON( true );
+	OperationData* data = new OperationData();
+	data->parseRequest = request;
+	data->parseReply = parseReply;
+	data->netMethod = QParse::OperationData::GET;
+	operationsQueue.enqueue( data );
+	return reply;
+}
 
+QParseReply* QParse::post( QParseRequest* request ) {
+	QParseReply* reply = new QParseReply(request, this);
+	reply->setIsJSON( true );
+	OperationData* data = new OperationData();
+	data->parseRequest = request;
+	data->parseReply = parseReply;
+	data->netMethod = QParse::OperationData::POST;
+	data->dataToPost = request->getParseObject()->toJson();
+	operationsQueue.enqueue( data );
+	return reply;
+}
+
+QParseReply* QParse::put( QParseRequest* request ) {
+	QParseReply* reply = new QParseReply(request, this);
+	reply->setIsJSON( true );
+	OperationData* data = new OperationData();
+	data->parseRequest = request;
+	data->parseReply = parseReply;
+	data->netMethod = QParse::OperationData::PUT;
+	data->dataToPost = request->getParseObject()->toJson();
+	operationsQueue.enqueue( data );
+	return reply;
+}
+
+void QParse::processOperationsQueue() {
+	if ( operationsQueue.isEmpty() ) return;
+	OperationData* data = operationsQueue.dequeue();
+	// create the endpoint
+	QUrl endpoint;
+	QString parseClassName = data->parseRequest->getParseClassName();
+	QParseObject* parseObject = data->parseRequest->getParseObject();
+	QString urlPrefix = "https://api.parse.com/1/";
+	if ( parseClassName == "_Users" ) {
+		endpoint = QUrl( QString("%1/users/%2")
+							.arg( urlPrefix )
+							.arg( parseObject ? parseObject->getId() : "" ) );
+	} else if (parseClassName == "login") {
+		endpoint = QUrl( QString("%1/login")
+							.arg( urlPrefix ) );
+	} else {
+		endpoint = QUrl( QString("%1/classes/%2/%3")
+							.arg( urlPrefix )
+							.arg( parseClassName )
+							.arg( parseObject ? parseObject->getId() : "" ) );
+	}
+	QList< QPair<QString,QString> > options = data->parseRequest->getOptions();
+	if ( options.size() > 0 ) {
+		QUrlQuery query;
+		query.setQueryItems( options );
+		endpoint.setQuery( query );
+	}
+	// create the netRequest
+	QNetworkRequest* request = new QNetworkRequest(endpoint);
+	request->setRawHeader("X-Parse-Application-Id", appId.toLatin1());
+	request->setRawHeader("X-Parse-REST-API-Key", restKey.toLatin1());
+	if ( user ) {
+		// if there is a user logged in, send also the session token
+		request->setRawHeader("X-Parse-Session-Token", user->getToken().toLatin1());
+	}
+	data->netRequest = request;
+	// send the net request to PARSE
+	switch(data->netMethod) {
+	case QParse::OperationData::GET:
+		operationsPending[net->get( *request )] = data;
+	case QParse::OperationData::POST:
+		operationsPending[net->post( *request, data->dataToPost )] = data;
+	break;
+	case QParse::OperationData::PUT:
+		operationsPending[net->post( *request, data->dataToPost )] = data;
+	break;
+	}
+	return;
 }
 
 void QParse::createUser( QString username, QString password, QMap<QString,QString> properties ) {
