@@ -16,3 +16,18 @@ void QParseRequest::addOption( QString name, QString value ) {
 QList< QPair<QString,QString> > QParseRequest::getOptions() {
 	return params;
 }
+
+QParseObject *QParseRequest::getParseObject() const
+{
+    return parseObject;
+}
+
+void QParseRequest::setParseObject(QParseObject *value)
+{
+    parseObject = value;
+}
+
+QString QParseRequest::getParseClassName() const
+{
+    return parseClassName;
+}

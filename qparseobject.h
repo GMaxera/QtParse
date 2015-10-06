@@ -5,6 +5,7 @@
 #include <QUrl>
 #include <QStringList>
 #include <QDateTime>
+#include <QJsonObject>
 
 /*! This class contain all common and generic operation than
  *  can be done on all objects stored on PARSE
@@ -50,6 +51,8 @@ public slots:
 	void forceUpdate();
 	//! update all data if the pulledAt is before the datetime passed
 	void updateIfOld( QDateTime validTime );
+	//! indicate if there is an updating operation ongoing
+	bool isSaving();
 	//! save the data to PARSE
 	void save();
 	/*! return a JSON object representing the object for PARSE
@@ -63,7 +66,10 @@ signals:
 	void savingChanged( bool saving );
 	void savingDone();
 protected:
+	//! return the class name used on PARSE for this object
 	virtual QString parseClassName() = 0;
+	//! return the list of properties used on PARSE for this object
+	virtual QStringList parseProperties() = 0;
 private slots:
 	/*! handle the completion of update request */
 	void onUpdateReply();

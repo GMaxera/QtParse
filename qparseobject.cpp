@@ -1,6 +1,7 @@
 #include "qparseobject.h"
 #include "qparse.h"
 #include "qparserequest.h"
+#include "qparsereply.h"
 #include <QDebug>
 
 QParseObject::QParseObject( QObject* parent )
@@ -38,6 +39,10 @@ void QParseObject::updateIfOld( QDateTime validTime ) {
 	}
 }
 
+bool QParseObject::isSaving() {
+	return saving;
+}
+
 void QParseObject::save() {
 	if ( updating || saving ) return;
 	saving = true;
@@ -55,10 +60,12 @@ void QParseObject::save() {
 }
 
 QJsonObject QParseObject::toJson( bool onlyChanged ) {
+	Q_UNUSED( onlyChanged )
 	QJsonObject data;
-	foreach( QString property, properties ) {
+	foreach( QString property, parseProperties() ) {
 		data[property] = QJsonValue::fromVariant(this->property( property.toLatin1().data() ));
 	}
+	return data;
 }
 
 void QParseObject::onUpdateReply() {

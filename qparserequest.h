@@ -2,6 +2,9 @@
 #define QPARSEREQUEST_H
 
 #include <QObject>
+#include <QList>
+#include <QPair>
+#include <QString>
 
 class QParseObject;
 
@@ -27,6 +30,12 @@ public:
 	 *        which implementation is already provided by QParse library
 	 */
 	QParseRequest( QString parseClassName );
+	//! return the class name used on PARSE for the target of this request
+	QString getParseClassName() const;
+
+	QParseObject *getParseObject() const;
+	void setParseObject(QParseObject *value);
+
 	/*! add the option and its value to the request
 	 *  \param name is the name of option (like 'include', 'where', etc)
 	 *  \param value is the value of the option to send
