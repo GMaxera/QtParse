@@ -27,6 +27,12 @@ QParse::QParse(QObject *parent)
 	// SET UP CACHE ON DISK TO HAVE PERSISTENT CACHING OF DOWNLOADED FILES
 	connect( net, SIGNAL(finished(QNetworkReply*)), this, SLOT(onRequestFinished(QNetworkReply*)) );
 	cacheValidity = QDateTime::currentDateTime();
+	// set the timer for processing the queue
+	timer = new QTimer(this);
+	timer->setInterval(0);
+	timer->setSingleShot(false);
+	connect( timer, &QTimer::timeout, this, &QParse::processOperationsQueue );
+	timer->start();
 }
 
 QParse* QParse::instance() {
@@ -90,6 +96,7 @@ QParseReply* QParse::put( QParseRequest* request ) {
 }
 
 void QParse::onRequestFinished(QNetworkReply *reply) {
+	qDebug() << "REPLY FROM PARSE";
 	if ( !operationsPending.contains(reply) ) {
 		qDebug() << "QParse Error - Not reply into operations map !!";
 	}
@@ -101,9 +108,11 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 		if ( data.contains("error") ) {
 			opdata->parseReply->setErrorMessage( data["error"].toString() );
 			opdata->parseReply->setErrorCode( data["code"].toInt() );
+			qDebug() << "PARSE ERROR" << data;
 		} else {
 			opdata->parseReply->setErrorMessage( reply->errorString() );
 			opdata->parseReply->setErrorCode( reply->error() );
+			qDebug() << "NETWORK ERROR" << reply->errorString();
 		}
 		// emit the signal and terminates
 		emit (opdata->parseReply->finished());
@@ -111,10 +120,14 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 	}
 	// process the reply
 	if ( opdata->parseReply->getIsJson() ) {
-		opdata->parseReply->setJson( QJsonDocument::fromJson( reply->readAll() ).object() );
+		QJsonObject data = QJsonDocument::fromJson( reply->readAll() ).object();
+		opdata->parseReply->setJson( data );
+		qDebug() << "JSON REPLY:" << data;
 		// emit the signal
 		emit (opdata->parseReply->finished());
 		return;
+	} else {
+		qDebug() << "DATA IS NOT JSON";
 	}
 }
 
@@ -159,10 +172,13 @@ void QParse::processOperationsQueue() {
 	switch(data->netMethod) {
 	case QParse::OperationData::GET:
 		operationsPending[net->get( *request )] = data;
+	break;
 	case QParse::OperationData::POST:
+		request->setRawHeader("Content-Type", "application/json");
 		operationsPending[net->post( *request, jsonDoc.toJson(QJsonDocument::Compact) )] = data;
 	break;
 	case QParse::OperationData::PUT:
+		request->setRawHeader("Content-Type", "application/json");
 		operationsPending[net->post( *request, jsonDoc.toJson(QJsonDocument::Compact) )] = data;
 	break;
 	}

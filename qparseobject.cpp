@@ -7,13 +7,15 @@
 QParseObject::QParseObject( QObject* parent )
 	: QObject(parent)
 	, id()
-	, updating(false) {
+	, updating(false)
+	, saving(false) {
 }
 
 QParseObject::QParseObject(QString id, QObject* parent)
 	: QObject(parent)
 	, id(id)
-	, updating(false) {
+	, updating(false)
+	, saving(false) {
 }
 
 QString QParseObject::getId() {
@@ -51,9 +53,11 @@ void QParseObject::save() {
 	QParseReply* reply;
 	if ( id.isEmpty() ) {
 		// create the object
+		qDebug() << "SAVE POST" << parseClassName();
 		reply = QParse::instance()->post( save );
 	} else {
 		// updated the object
+		qDebug() << "SAVE PUT" << parseClassName();
 		reply = QParse::instance()->put( save );
 	}
 	connect( reply, &QParseReply::finished, this, &QParseObject::onSaveReply );
@@ -65,6 +69,7 @@ QJsonObject QParseObject::toJson( bool onlyChanged ) {
 	foreach( QString property, parseProperties() ) {
 		data[property] = QJsonValue::fromVariant(this->property( property.toLatin1().data() ));
 	}
+	qDebug() << "CONSTRUCTING JSON: " << data;
 	return data;
 }
 

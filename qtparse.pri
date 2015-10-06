@@ -1,4 +1,6 @@
 
+INCLUDEPATH += $$PWD
+
 SOURCES += \
 	$$PWD/qparse.cpp \
 	$$PWD/qparseobject.cpp \

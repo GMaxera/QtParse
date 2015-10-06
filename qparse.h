@@ -12,6 +12,7 @@
 #include <QQueue>
 #include <QJsonObject>
 #include <QVariantMap>
+#include <QTimer>
 
 class QNetworkAccessManager;
 class QNetworkRequest;
@@ -116,6 +117,8 @@ private:
 	//! the map of operation sent to Parse waiting for a netReply to process
 	QMap<QNetworkReply*, OperationData*> operationsPending;
 
+	//! Timer for triggering the execution of processOperationsQueue()
+	QTimer* timer;
 };
 
 #endif // QPARSE_H
