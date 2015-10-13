@@ -9,6 +9,7 @@ SOURCES += \
 	$$PWD/qparsereply.cpp
 
 HEADERS += \
+	$$PWD/qparsetypes.h \
 	$$PWD/qparse.h \
 	$$PWD/qparseobject.h \
 	$$PWD/qparseuser.h \
