@@ -6,6 +6,7 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QJsonObject>
+#include "qparsetypes.h"
 
 /*! This class contain all common and generic operation than
  *  can be done on all objects stored on PARSE
@@ -19,7 +20,13 @@
 class QParseObject : public QObject {
 	Q_OBJECT
 	//! the object id on PARSE
-	Q_PROPERTY( QString id READ getId CONSTANT )
+	Q_PROPERTY( QString objectId READ getObjectId CONSTANT )
+	/*! the createdAt on PARSE
+	 *  The only case on which the createdAtChanged will be fired is at the creation of object on PARSE
+	 */
+	Q_PROPERTY( QParseDate createdAt READ getCreatedAt NOTIFY createdAtChanged )
+	//! the updatedAt on PARSE
+	Q_PROPERTY( QParseDate updatedAt READ getUpdatedAt NOTIFY updatedAtChanged )
 	//! if true means that new data will be downloaded from cloud and the current may not valid anymore
 	Q_PROPERTY( bool updating READ isUpdating NOTIFY updatingChanged )
 	/*! if true means that there is a pending request of saving data
@@ -44,13 +51,17 @@ public:
 	 */
 	QParseObject( QString id, QObject* parent=0 );
 public slots:
-	QString getId();
+	QString getObjectId();
+	QParseDate getCreatedAt() const;
+	QParseDate getUpdatedAt() const;
 	//! indicate if there is an updating operation ongoing
 	bool isUpdating();
-	//! force a new update of all data
-	void forceUpdate();
-	//! update all data if the pulledAt is before the datetime passed
-	void updateIfOld( QDateTime validTime );
+	/*! update the data getting them from PARSE
+	 *  \note this does not necessary means it will do a real network request
+	 *        because depending on the QParse caching settings, the data might
+	 *        be retrieved from the network cache
+	 */
+	void update();
 	//! indicate if there is an updating operation ongoing
 	bool isSaving();
 	//! save the data to PARSE
@@ -60,11 +71,15 @@ public slots:
 	 *			only the properties changed since the last saving
 	 */
 	QJsonObject toJson( bool onlyChanged=false );
+	//! return the JSON pointer-to-object for pointer types on PARSE
+	QJsonObject getJsonPointer();
 signals:
 	void updatingChanged( bool updating );
 	void updatingDone();
 	void savingChanged( bool saving );
 	void savingDone();
+	void createdAtChanged(QParseDate createdAt);
+	void updatedAtChanged(QParseDate updatedAt);
 protected:
 	//! return the class name used on PARSE for this object
 	virtual QString parseClassName() = 0;
@@ -76,11 +91,11 @@ private slots:
 	/*! handle the completion of save request */
 	void onSaveReply();
 private:
-	QString id;
+	QString objectId;
+	QParseDate createdAt;
+	QParseDate updatedAt;
 	bool updating;
 	bool saving;
-	//! when the data has been pulled from PARSE
-	QDateTime pulledAt;
 };
 
 #endif // QPARSEOBJECT_H

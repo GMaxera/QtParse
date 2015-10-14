@@ -1,5 +1,6 @@
 
 #include "qparse.h"
+#include "qparsetypes.h"
 #include "qparseobject.h"
 #include "qparseuser.h"
 #include "qparserequest.h"
@@ -7,6 +8,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QNetworkDiskCache>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -22,8 +24,15 @@
 
 QParse::QParse(QObject *parent)
 	: QObject(parent) {
+	// register metatypes
+	qRegisterMetaType<QParseDate>("QParseDate");
+	qRegisterMetaType<QParseFile>("QParseFile");
+	// initialize the singleton
 	user = NULL;
 	net = new QNetworkAccessManager(this);
+	QNetworkDiskCache* diskCache = new QNetworkDiskCache(this);
+	diskCache->setCacheDirectory( QString("%1/QParseCache").arg( QStandardPaths::writableLocation(QStandardPaths::CacheLocation) ) );
+	net->setCache(diskCache);
 	// SET UP CACHE ON DISK TO HAVE PERSISTENT CACHING OF DOWNLOADED FILES
 	connect( net, SIGNAL(finished(QNetworkReply*)), this, SLOT(onRequestFinished(QNetworkReply*)) );
 	cacheValidity = QDateTime::currentDateTime();
@@ -142,7 +151,7 @@ void QParse::processOperationsQueue() {
 	if ( parseClassName == "_Users" ) {
 		endpoint = QUrl( QString("%1/users/%2")
 							.arg( urlPrefix )
-							.arg( parseObject ? parseObject->getId() : "" ) );
+							.arg( parseObject ? parseObject->getObjectId() : "" ) );
 	} else if (parseClassName == "login") {
 		endpoint = QUrl( QString("%1/login")
 							.arg( urlPrefix ) );
@@ -150,7 +159,7 @@ void QParse::processOperationsQueue() {
 		endpoint = QUrl( QString("%1/classes/%2/%3")
 							.arg( urlPrefix )
 							.arg( parseClassName )
-							.arg( parseObject ? parseObject->getId() : "" ) );
+							.arg( parseObject ? parseObject->getObjectId() : "" ) );
 	}
 	QList< QPair<QString,QString> > options = data->parseRequest->getOptions();
 	if ( options.size() > 0 ) {
@@ -171,6 +180,7 @@ void QParse::processOperationsQueue() {
 	QJsonDocument jsonDoc(data->dataToPost);
 	switch(data->netMethod) {
 	case QParse::OperationData::GET:
+		request->setAttribute( QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::PreferCache );
 		operationsPending[net->get( *request )] = data;
 	break;
 	case QParse::OperationData::POST:

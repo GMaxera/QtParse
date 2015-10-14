@@ -6,39 +6,45 @@
 
 QParseObject::QParseObject( QObject* parent )
 	: QObject(parent)
-	, id()
+	, objectId()
+	, createdAt()
+	, updatedAt()
 	, updating(false)
 	, saving(false) {
 }
 
-QParseObject::QParseObject(QString id, QObject* parent)
+QParseObject::QParseObject(QString objectId, QObject* parent)
 	: QObject(parent)
-	, id(id)
+	, objectId(objectId)
+	, createdAt()
+	, updatedAt()
 	, updating(false)
 	, saving(false) {
 }
 
-QString QParseObject::getId() {
-	return id;
+QString QParseObject::getObjectId() {
+	return objectId;
+}
+
+QParseDate QParseObject::getCreatedAt() const {
+	return createdAt;
+}
+
+QParseDate QParseObject::getUpdatedAt() const {
+	return updatedAt;
 }
 
 bool QParseObject::isUpdating() {
 	return updating;
 }
 
-void QParseObject::forceUpdate() {
-	if ( id.isEmpty() || updating || saving ) return;
+void QParseObject::update() {
+	if ( objectId.isEmpty() || updating || saving ) return;
 	updating = true;
 	QParseRequest* update = new QParseRequest(parseClassName());
 	update->setParseObject( this );
 	QParseReply* reply = QParse::instance()->get( update );
 	connect( reply, &QParseReply::finished, this, &QParseObject::onUpdateReply );
-}
-
-void QParseObject::updateIfOld( QDateTime validTime ) {
-	if ( pulledAt < validTime ) {
-		forceUpdate();
-	}
 }
 
 bool QParseObject::isSaving() {
@@ -51,7 +57,7 @@ void QParseObject::save() {
 	QParseRequest* save = new QParseRequest(parseClassName());
 	save->setParseObject( this );
 	QParseReply* reply;
-	if ( id.isEmpty() ) {
+	if ( objectId.isEmpty() ) {
 		// create the object
 		qDebug() << "SAVE POST" << parseClassName();
 		reply = QParse::instance()->post( save );
@@ -67,15 +73,35 @@ QJsonObject QParseObject::toJson( bool onlyChanged ) {
 	Q_UNUSED( onlyChanged )
 	QJsonObject data;
 	foreach( QString property, parseProperties() ) {
-		data[property] = QJsonValue::fromVariant(this->property( property.toLatin1().data() ));
+		QVariant value = this->property( property.toLatin1().data() );
+		// handle PARSE specific data
+		if ( value.canConvert<QParseObject*>() ) {
+			// pointer to Parse object
+			data[property] = value.value<QParseObject*>()->getJsonPointer();
+		} else if ( value.canConvert<QParseDate>() ) {
+			// Parse Date type
+			data[property] = value.value<QParseDate>().toJson();
+		} else if ( value.canConvert<QParseFile>() ) {
+			// Parse File type
+			data[property] = value.value<QParseFile>().toJson();
+		} else {
+			data[property] = QJsonValue::fromVariant(this->property( property.toLatin1().data() ));
+		}
 	}
 	qDebug() << "CONSTRUCTING JSON: " << data;
 	return data;
 }
 
+QJsonObject QParseObject::getJsonPointer() {
+	QJsonObject pointer;
+	pointer["__type"] = "Pointer";
+	pointer["className"] = parseClassName();
+	pointer["objectId"] = getObjectId();
+	return pointer;
+}
+
 void QParseObject::onUpdateReply() {
 	updating = false;
-	pulledAt = QDateTime::currentDateTime();
 	emit updatingChanged( updating );
 	emit updatingDone();
 }
