@@ -50,6 +50,10 @@ public:
 	 *		this will avoid QML to take ownership of object and destroy we not expected
 	 */
 	QParseObject( QString id, QObject* parent=0 );
+	//! return the class name used on PARSE for this object
+	virtual QString parseClassName() = 0;
+	//! return the list of properties used on PARSE for this object
+	virtual QStringList parseProperties() = 0;
 public slots:
 	QString getObjectId();
 	QParseDate getCreatedAt() const;
@@ -80,11 +84,6 @@ signals:
 	void savingDone();
 	void createdAtChanged(QParseDate createdAt);
 	void updatedAtChanged(QParseDate updatedAt);
-protected:
-	//! return the class name used on PARSE for this object
-	virtual QString parseClassName() = 0;
-	//! return the list of properties used on PARSE for this object
-	virtual QStringList parseProperties() = 0;
 private slots:
 	/*! handle the completion of update request */
 	void onUpdateReply();

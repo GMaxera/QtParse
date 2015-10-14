@@ -54,7 +54,7 @@ public:
 
 signals:
 	//! emitted when the reply has been arrived and prepared to be processed
-	void finished();
+	void finished( QParseReply* reply);
 private:
 	//! the request
 	QParseRequest* request;

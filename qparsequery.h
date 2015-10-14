@@ -12,11 +12,11 @@
 class QParseQuery : public QObject {
 	Q_OBJECT
 public:
-	/*! constructor of a new query */
+	/*! constructor a new query */
 	template<class ParseObject>
-	QParseQuery()
-		: QObject(QParse::instance())
-		, metaParseObject(ParseObject::staticMetaObject) {
+	static QParseQuery* create() {
+		ParseObject p;
+		return new QParseQuery(p.parseClassName(), ParseObject::staticMetaObject);
 	}
 public slots:
 	//! execute the query
@@ -27,14 +27,20 @@ signals:
 protected:
 private slots:
 	/*! handle the completion of get request on PARSE */
-	void onQueryReply();
+	void onQueryReply( QParseReply* reply );
 private:
-	// disable non-template constructors
-	QParseQuery();
+	// disable public constructors
+	QParseQuery( QString parseClassName, QMetaObject metaParseObject )
+		: QObject(QParse::instance())
+		, metaParseObject(metaParseObject)
+		, parseClassName(parseClassName) {
+	}
 	Q_DISABLE_COPY( QParseQuery )
 
 	//! the QMetaObject used for constructing the right QParseObject
 	QMetaObject metaParseObject;
+	//! the Parse class name target of the query
+	QString parseClassName;
 };
 
 #endif // QPARSEQUERY_H

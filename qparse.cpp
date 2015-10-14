@@ -8,7 +8,6 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QNetworkDiskCache>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -30,12 +29,11 @@ QParse::QParse(QObject *parent)
 	// initialize the singleton
 	user = NULL;
 	net = new QNetworkAccessManager(this);
-	QNetworkDiskCache* diskCache = new QNetworkDiskCache(this);
-	diskCache->setCacheDirectory( QString("%1/QParseCache").arg( QStandardPaths::writableLocation(QStandardPaths::CacheLocation) ) );
+	ParseDiskCache* diskCache = new ParseDiskCache(this);
+	diskCache->setCacheDirectory( QString("%1/QParseCache").arg( QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) ) );
 	net->setCache(diskCache);
-	// SET UP CACHE ON DISK TO HAVE PERSISTENT CACHING OF DOWNLOADED FILES
+	qDebug() << "CACHE INFO:" << diskCache->cacheSize() << diskCache->cacheDirectory();
 	connect( net, SIGNAL(finished(QNetworkReply*)), this, SLOT(onRequestFinished(QNetworkReply*)) );
-	cacheValidity = QDateTime::currentDateTime();
 	// set the timer for processing the queue
 	timer = new QTimer(this);
 	timer->setInterval(0);
@@ -124,16 +122,18 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 			qDebug() << "NETWORK ERROR" << reply->errorString();
 		}
 		// emit the signal and terminates
-		emit (opdata->parseReply->finished());
+		emit (opdata->parseReply->finished(opdata->parseReply));
 		return;
 	}
 	// process the reply
+	QVariant fromCache = reply->attribute(QNetworkRequest::SourceIsFromCacheAttribute);
+	qDebug() << "page from cache?" << fromCache.toBool();
 	if ( opdata->parseReply->getIsJson() ) {
 		QJsonObject data = QJsonDocument::fromJson( reply->readAll() ).object();
 		opdata->parseReply->setJson( data );
 		qDebug() << "JSON REPLY:" << data;
 		// emit the signal
-		emit (opdata->parseReply->finished());
+		emit (opdata->parseReply->finished(opdata->parseReply));
 		return;
 	} else {
 		qDebug() << "DATA IS NOT JSON";
@@ -195,6 +195,20 @@ void QParse::processOperationsQueue() {
 	return;
 }
 
+QParse::ParseDiskCache::ParseDiskCache(QObject *parent)
+	: QNetworkDiskCache(parent) {
+}
+
+QIODevice* QParse::ParseDiskCache::prepare(const QNetworkCacheMetaData& metaData) {
+	if ( metaData.expirationDate().isValid() ) {
+		return QNetworkDiskCache::prepare(metaData);
+	} else {
+		// override metaData
+		QNetworkCacheMetaData metaData2 = metaData;
+		metaData2.setExpirationDate( QDateTime::currentDateTime().addSecs(2*60) );
+		return QNetworkDiskCache::prepare(metaData2);
+	}
+}
 
 //	break;
 //	case OperationData::Login: {

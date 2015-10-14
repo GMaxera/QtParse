@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QVariantMap>
 #include <QTimer>
+#include <QNetworkDiskCache>
 
 class QNetworkAccessManager;
 class QNetworkRequest;
@@ -81,12 +82,6 @@ private:
 	//! cached object
 	QMap<QString, QParseObject*> cachedObject;
 
-	/*! date of cache validity
-	 * if the user has been downloaded before this date
-	 * then a forceUpdate will be raised
-	 */
-	QDateTime cacheValidity;
-
 	//! the newtork manager for sending requests to cloud backend
 	QNetworkAccessManager* net;
 	//! inner private class for storing data about operations on Parse
@@ -119,6 +114,13 @@ private:
 
 	//! Timer for triggering the execution of processOperationsQueue()
 	QTimer* timer;
+
+	//! Inner class for custom cache handling based on QNetworkDiskCache
+	class ParseDiskCache : public QNetworkDiskCache {
+	public:
+		ParseDiskCache(QObject* parent);
+		virtual QIODevice* prepare(const QNetworkCacheMetaData& metaData);
+	};
 };
 
 #endif // QPARSE_H
