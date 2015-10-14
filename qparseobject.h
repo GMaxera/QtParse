@@ -8,6 +8,8 @@
 #include <QJsonObject>
 #include "qparsetypes.h"
 
+class QParseReply;
+
 /*! This class contain all common and generic operation than
  *  can be done on all objects stored on PARSE
  *
@@ -86,9 +88,9 @@ signals:
 	void updatedAtChanged(QParseDate updatedAt);
 private slots:
 	/*! handle the completion of update request */
-	void onUpdateReply();
+	void onUpdateReply( QParseReply* reply );
 	/*! handle the completion of save request */
-	void onSaveReply();
+	void onSaveReply( QParseReply* reply );
 private:
 	QString objectId;
 	QParseDate createdAt;

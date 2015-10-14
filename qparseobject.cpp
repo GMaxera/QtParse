@@ -100,13 +100,13 @@ QJsonObject QParseObject::getJsonPointer() {
 	return pointer;
 }
 
-void QParseObject::onUpdateReply() {
+void QParseObject::onUpdateReply( QParseReply* reply ) {
 	updating = false;
 	emit updatingChanged( updating );
 	emit updatingDone();
 }
 
-void QParseObject::onSaveReply() {
+void QParseObject::onSaveReply( QParseReply* reply ) {
 	saving = false;
 	// if id.isEmpty a new object has been created
 	emit savingChanged( saving );
