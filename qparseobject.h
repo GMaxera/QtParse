@@ -42,20 +42,19 @@ public:
 	 *  will result into a creation of new object in PARSE
 	 *
 	 *  \warning When created from C++ side always set the parent to QParse::instance(),
-	 *		this will avoid QML to take ownership of object and destroy we not expected
+	 *		this will avoid QML to take ownership of object and destroy when not expected
 	 */
 	QParseObject( QObject* parent=0 );
-	/*! construct a user object with only the id set
-	 *  Call forceUpdate as soon as possible to get data from PARSE about this object
+	/*! construct a new object initializing the properties using Json data from PARSE
 	 *
 	 *  \warning When created from C++ side always set the parent to QParse::instance(),
-	 *		this will avoid QML to take ownership of object and destroy we not expected
+	 *		this will avoid QML to take ownership of object and destroy when not expected
 	 */
-	QParseObject( QString id, QObject* parent=0 );
+	Q_INVOKABLE QParseObject( QJsonObject jsonData, QObject* parent=0 );
 	//! return the class name used on PARSE for this object
-	virtual QString parseClassName() = 0;
+	virtual QString parseClassName() { return QString(); }
 	//! return the list of properties used on PARSE for this object
-	virtual QStringList parseProperties() = 0;
+	virtual QStringList parseProperties() { return QStringList(); }
 public slots:
 	QString getObjectId();
 	QParseDate getCreatedAt() const;

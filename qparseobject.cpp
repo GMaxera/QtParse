@@ -13,13 +13,16 @@ QParseObject::QParseObject( QObject* parent )
 	, saving(false) {
 }
 
-QParseObject::QParseObject(QString objectId, QObject* parent)
+QParseObject::QParseObject(QJsonObject jsonData, QObject* parent)
 	: QObject(parent)
-	, objectId(objectId)
+	, objectId()
 	, createdAt()
 	, updatedAt()
 	, updating(false)
 	, saving(false) {
+	objectId = jsonData["objectId"].toString();
+	createdAt = QParseDate( jsonData["createdAt"].toString() );
+	updatedAt = QParseDate( jsonData["updatedAt"].toString() );
 }
 
 QString QParseObject::getObjectId() {

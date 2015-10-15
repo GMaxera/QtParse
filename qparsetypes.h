@@ -17,6 +17,11 @@ public:
 	QParseDate( const QParseDate& src );
 	//! construct a QParseDate from the Json PARSE representation
 	QParseDate( QJsonObject fromParse );
+	/*! construct a QParseDate from ISO Date representation
+	 *  This is mainly used for createdAt and updatedAt default PARSE properties
+	 *  that are returned directly as string and not as Date type
+	 */
+	QParseDate( QString isoParse );
 	//! construct a QParseDate from a QDateTime object
 	QParseDate( QDateTime fromDateTime );
 	bool operator==( QParseDate const& other ) const;
@@ -25,6 +30,8 @@ public:
 	QJsonObject toJson() const;
 	//! export into QDateTime
 	QDateTime toDateTime() const;
+	//! return the ISO representation of the date
+	QString toISO();
 private:
 	//! Json representation for PARSE
 	QJsonObject json;
@@ -35,6 +42,9 @@ Q_DECLARE_METATYPE( QParseDate )
 
 //! The File type on PARSE
 class QParseFile {
+	Q_GADGET
+	Q_PROPERTY( QUrl url READ getUrl CONSTANT )
+	Q_PROPERTY( QString name READ getName CONSTANT )
 public:
 	//! default constructor
 	QParseFile();

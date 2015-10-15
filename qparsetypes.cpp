@@ -21,6 +21,14 @@ QParseDate::QParseDate( QJsonObject fromParse )
 	dateTime = QDateTime::fromString( json["iso"].toString(), "yyyy-MM-dd'T'HH:mm:ss.zzz'Z'");
 }
 
+QParseDate::QParseDate( QString isoParse )
+	: json()
+	, dateTime() {
+	dateTime = QDateTime::fromString( isoParse, "yyyy-MM-dd'T'HH:mm:ss.zzz'Z'");
+	json["__type"] = "Date";
+	json["iso"] = dateTime.toString("yyyy-MM-dd'T'HH:mm:ss.zzz'Z'");
+}
+
 QParseDate::QParseDate( QDateTime fromDateTime )
 	: json()
 	, dateTime() {
@@ -43,6 +51,10 @@ QJsonObject QParseDate::toJson() const {
 
 QDateTime QParseDate::toDateTime() const {
 	return dateTime;
+}
+
+QString QParseDate::toISO() {
+	return json["iso"].toString();
 }
 
 QParseFile::QParseFile()

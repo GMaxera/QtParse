@@ -24,6 +24,8 @@ public slots:
 signals:
 	//! return the all retrieved objects
 	void queryResults( QList<QParseObject*> results );
+	//! emitted when there is some error
+	void queryError( QString message );
 protected:
 private slots:
 	/*! handle the completion of get request on PARSE */
