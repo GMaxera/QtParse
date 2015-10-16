@@ -63,6 +63,22 @@ void QParse::setAppId(const QString &value) {
 	appId = value;
 }
 
+QJsonValue QParse::getAppConfigValue( QString key ) {
+	return appConfig[key];
+}
+
+void QParse::updateAppConfigValues() {
+	// direct request, the reply will be handled on onRequestFinished
+	QNetworkRequest request(QUrl("https://api.parse.com/1/config"));
+	request.setRawHeader("X-Parse-Application-Id", appId.toLatin1());
+	request.setRawHeader("X-Parse-REST-API-Key", restKey.toLatin1());
+	if ( user ) {
+		// if there is a user logged in, send also the session token
+		request.setRawHeader("X-Parse-Session-Token", user->getToken().toLatin1());
+	}
+	net->get(request);
+}
+
 QParseUser* QParse::getMe() {
 	return user;
 }
@@ -105,7 +121,16 @@ QParseReply* QParse::put( QParseRequest* request ) {
 void QParse::onRequestFinished(QNetworkReply *reply) {
 	qDebug() << "REPLY FROM PARSE";
 	if ( !operationsPending.contains(reply) ) {
-		qDebug() << "QParse Error - Not reply into operations map !!";
+		// check the special case of PARSE App Config
+		if ( reply->url() == QUrl("https://api.parse.com/1/config") ) {
+			QJsonObject data = QJsonDocument::fromJson( reply->readAll() ).object();
+			appConfig = data["params"].toObject();
+			emit appConfigChanged();
+			qDebug() << "DOWNLOADED APP CONFIG" << appConfig;
+		} else {
+			qDebug() << "QParse Error - Not reply into operations map !!";
+		}
+		return;
 	}
 	OperationData* opdata = operationsPending.take(reply);
 	// check for any errors

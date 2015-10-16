@@ -10,6 +10,8 @@
 
 //! The Date type on PARSE
 class QParseDate {
+	Q_GADGET
+	Q_PROPERTY( QDateTime dateTime READ toDateTime CONSTANT )
 public:
 	//! default constructor
 	QParseDate();

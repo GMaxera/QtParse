@@ -11,6 +11,7 @@
 #include <QUrl>
 #include <QQueue>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QVariantMap>
 #include <QTimer>
 #include <QNetworkDiskCache>
@@ -48,6 +49,13 @@ public slots:
 	void setAppId(const QString &value);
 	QString getRestKey() const;
 	void setRestKey(const QString &value);
+	/*! return the Json value of the specified PARSE config
+	 *  \note before access to any app config, make sure you downloaded the app config
+	 *		  with updateAppConfigValues
+	 */
+	QJsonValue getAppConfigValue( QString key );
+	//! update the app config values
+	void updateAppConfigValues();
 	//! return the logged user; a NULL pointer means no user is logged in
 	QParseUser* getMe();
 	//! Perform a get request on PARSE
@@ -59,6 +67,8 @@ public slots:
 signals:
 	void appIdChanged( QString appId );
 	void restKeyChanged( QString restKey );
+	//! emitted when the app config has been updated (retrieve them using getAppConfigValue
+	void appConfigChanged();
 	void meChanged( QParseUser* user );
 private slots:
 	//! it manage the returned data from the cloud backed
@@ -76,6 +86,9 @@ private:
 	//! PARSE Keys
 	QString appId;
 	QString restKey;
+
+	//! The App config
+	QJsonObject appConfig;
 
 	//! current user
 	QParseUser* user;
