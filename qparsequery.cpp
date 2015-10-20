@@ -12,7 +12,6 @@ void QParseQuery::query() {
 }
 
 void QParseQuery::onQueryReply( QParseReply* reply ) {
-	qDebug() << "QParseQuery REPLY: " << reply->getJson();
 	if ( reply->getHasError() ) {
 		emit queryError( reply->getErrorMessage() );
 		return;
@@ -28,4 +27,5 @@ void QParseQuery::onQueryReply( QParseReply* reply ) {
 		parseObjects << parseObject;
 	}
 	emit queryResults( parseObjects );
+	reply->deleteLater();
 }

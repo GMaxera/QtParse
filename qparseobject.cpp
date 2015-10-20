@@ -62,11 +62,9 @@ void QParseObject::save() {
 	QParseReply* reply;
 	if ( objectId.isEmpty() ) {
 		// create the object
-		qDebug() << "SAVE POST" << parseClassName();
 		reply = QParse::instance()->post( save );
 	} else {
 		// updated the object
-		qDebug() << "SAVE PUT" << parseClassName();
 		reply = QParse::instance()->put( save );
 	}
 	connect( reply, &QParseReply::finished, this, &QParseObject::onSaveReply );
@@ -84,14 +82,13 @@ QJsonObject QParseObject::toJson( bool onlyChanged ) {
 		} else if ( value.canConvert<QParseDate>() ) {
 			// Parse Date type
 			data[property] = value.value<QParseDate>().toJson();
-		} else if ( value.canConvert<QParseFile>() ) {
+		} else if ( value.canConvert<QParseFile*>() ) {
 			// Parse File type
-			data[property] = value.value<QParseFile>().toJson();
+			data[property] = value.value<QParseFile*>()->toJson();
 		} else {
 			data[property] = QJsonValue::fromVariant(this->property( property.toLatin1().data() ));
 		}
 	}
-	qDebug() << "CONSTRUCTING JSON: " << data;
 	return data;
 }
 
@@ -107,6 +104,7 @@ void QParseObject::onUpdateReply( QParseReply* reply ) {
 	updating = false;
 	emit updatingChanged( updating );
 	emit updatingDone();
+	reply->deleteLater();
 }
 
 void QParseObject::onSaveReply( QParseReply* reply ) {
@@ -114,4 +112,5 @@ void QParseObject::onSaveReply( QParseReply* reply ) {
 	// if id.isEmpty a new object has been created
 	emit savingChanged( saving );
 	emit savingDone();
+	reply->deleteLater();
 }

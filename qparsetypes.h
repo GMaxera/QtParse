@@ -5,6 +5,9 @@
 #include <QDateTime>
 #include <QUrl>
 #include <QMetaType>
+#include <QObject>
+
+class QParseReply;
 
 //! \file This file contains the classes for handle easily the PARSE data types
 
@@ -43,21 +46,24 @@ private:
 Q_DECLARE_METATYPE( QParseDate )
 
 //! The File type on PARSE
-class QParseFile {
-	Q_GADGET
+class QParseFile : public QObject {
+	Q_OBJECT
 	Q_PROPERTY( QUrl url READ getUrl CONSTANT )
 	Q_PROPERTY( QString name READ getName CONSTANT )
+	Q_PROPERTY( QUrl localUrl MEMBER localUrl NOTIFY localUrlChanged )
+	Q_PROPERTY( Status status MEMBER status NOTIFY statusChanged )
 public:
+	enum Status { NotValid, ToUpload, NotCached, Caching, Cached };
+	Q_ENUM( Status )
 	//! default constructor
-	QParseFile();
+	QParseFile( QObject* parent=0 );
 	//! copy-constructor
-	QParseFile( const QParseFile& src );
+	QParseFile( const QParseFile& src, QObject* parent=0 );
 	//! construct a QParseFile from the Json PARSE representation
-	QParseFile( QJsonObject fromParse );
+	QParseFile( QJsonObject fromParse, QObject* parent=0 );
 	//! construct a QParseFile from a local file
-	QParseFile( QUrl localFile );
-	bool operator==( QParseFile const& other ) const;
-	bool operator!=( QParseFile const& other ) const;
+	QParseFile( QUrl localFile, QObject* parent=0 );
+public slots:
 	/*! the URL where the file is currently stored
 	 *
 	 *  If the URL points to a local file it means
@@ -75,6 +81,21 @@ public:
 	QString getName() const;
 	//! export into Json PARSE representation
 	QJsonObject toJson();
+	//! return true if the data represent a valid local file or a valid remote PARSE file
+	bool isValid();
+
+	QUrl getLocalUrl() const;
+	void setLocalUrl(const QUrl &value);
+
+	Status getStatus() const;
+	void setStatus(const Status &value);
+
+	/*! send a request for caching the file */
+	void pull();
+signals:
+	void localUrlChanged( QUrl localUrl );
+	void statusChanged( Status status );
+	void cached( QUrl localFile );
 private:
 	//! Json representation for PARSE
 	QJsonObject json;
@@ -93,7 +114,17 @@ private:
 	 *  this name will be empty
 	 */
 	QString name;
+	/*! The local Url is where the file has been cached
+	 *  It's only valid where status == Cached
+	 */
+	QUrl localUrl;
+	/*! the status of this QParseFile
+	 *  NotValid -> Not valid
+	 *  ToUpload -> is a local file not uploaded yet to PARSE
+	 *  NotCached -> is a Parse file not downloaded yet
+	 *  Cached -> is a Parse file cached locally
+	 */
+	Status status;
 };
-Q_DECLARE_METATYPE( QParseFile )
 
 #endif // QPARSETYPES_H

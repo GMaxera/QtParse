@@ -13,6 +13,10 @@ QParseReply::QParseReply(QParseRequest *request, QParse *parent)
 
 }
 
+QParseRequest* QParseReply::getRequest() const {
+	return request;
+}
+
 bool QParseReply::getIsJson() const {
 	return isJson;
 }
@@ -27,6 +31,14 @@ QJsonObject QParseReply::getJson() const {
 
 void QParseReply::setJson(const QJsonObject &value) {
 	json = value;
+}
+
+QUrl QParseReply::getLocalUrl() const {
+	return localUrl;
+}
+
+void QParseReply::setLocalUrl(const QUrl &value) {
+	localUrl = value;
 }
 
 bool QParseReply::getHasError() const {

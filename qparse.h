@@ -15,6 +15,7 @@
 #include <QVariantMap>
 #include <QTimer>
 #include <QNetworkDiskCache>
+#include <QQmlNetworkAccessManagerFactory>
 
 class QNetworkAccessManager;
 class QNetworkRequest;
@@ -25,6 +26,8 @@ class QParseRequest;
 class QParseReply;
 class QParseObject;
 class QParseUser;
+class QParseDiskCache;
+class QParseNetworkAccessManagerFactory;
 
 /*! This class creates allow to connect to PARSE cloud and
  *  perform operations on it as query, storing and retriveing data
@@ -92,8 +95,6 @@ private:
 
 	//! current user
 	QParseUser* user;
-	//! cached object
-	QMap<QString, QParseObject*> cachedObject;
 
 	//! the newtork manager for sending requests to cloud backend
 	QNetworkAccessManager* net;
@@ -111,7 +112,7 @@ private:
 		QParseRequest* parseRequest;
 		QParseReply* parseReply;
 		QNetworkRequest* netRequest;
-		enum NetMethod { GET, PUT, POST, DELETE, GET_FILE, POST_FILE };
+		enum NetMethod { GET, PUT, POST, DELETE };
 		NetMethod netMethod;
 		QJsonObject dataToPost;
 		QFile* fileToPost;
@@ -128,12 +129,35 @@ private:
 	//! Timer for triggering the execution of processOperationsQueue()
 	QTimer* timer;
 
-	//! Inner class for custom cache handling based on QNetworkDiskCache
-	class ParseDiskCache : public QNetworkDiskCache {
+	//! inner private class for handling cached items
+	class CacheData {
 	public:
-		ParseDiskCache(QObject* parent);
-		virtual QIODevice* prepare(const QNetworkCacheMetaData& metaData);
+		//! the cached data can be only a Json object or a binary file
+		bool isJson;
+		//! the local file where data is cached
+		QUrl localFile;
+		//! date of creation
+		QDateTime createdAt;
 	};
+	//! all cached data indexed by QUrl request
+	QMap<QUrl, CacheData> cache;
+	//! writable cache directory
+	QString cacheDir;
+	//! INI file containing the cache data info
+	QString cacheIni;
+	//! load all cache data info from the disk
+	void loadCacheInfoData();
+	//! update/write a cache element
+	void updateCache( QNetworkReply* reply, OperationData* opdata );
+	//! return true if there is a valid cached data for given request
+	bool isRequestCached( QUrl url );
+	//! fill the reply with cached data
+	void fillWithCachedData( QUrl url, QParseReply* reply );
+	//! return the Json object cached at given url
+	QJsonObject getCachedJson( QUrl url );
+
+	//! return a unique file name into the cacheDir (return full path)
+	QString getUniqueCacheFilename();
 };
 
 #endif // QPARSE_H

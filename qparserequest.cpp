@@ -6,6 +6,15 @@ QParseRequest::QParseRequest( QString parseClassName )
 	: QObject(QParse::instance())
 	, parseClassName(parseClassName)
 	, parseObject(NULL)
+	, parseFile(NULL)
+	, params() {
+}
+
+QParseRequest::QParseRequest( QParseFile* parseFile )
+	: QObject(QParse::instance())
+	, parseClassName()
+	, parseObject(NULL)
+	, parseFile(parseFile)
 	, params() {
 }
 
@@ -17,17 +26,30 @@ QList< QPair<QString,QString> > QParseRequest::getOptions() {
 	return params;
 }
 
-QParseObject *QParseRequest::getParseObject() const
-{
-    return parseObject;
+QParseFile* QParseRequest::getParseFile() const {
+	return parseFile;
 }
 
-void QParseRequest::setParseObject(QParseObject *value)
-{
-    parseObject = value;
+void QParseRequest::setParseFile(QParseFile* value) {
+	parseFile = value;
 }
 
-QString QParseRequest::getParseClassName() const
-{
+QParseObject* QParseRequest::getParseObject() const {
+	return parseObject;
+}
+
+void QParseRequest::setParseObject(QParseObject *value) {
+	parseObject = value;
+}
+
+QString QParseRequest::getParseClassName() const {
     return parseClassName;
+}
+
+QString QParseRequest::getLocalFilename() const {
+	return localFilename;
+}
+
+void QParseRequest::setLocalFilename(const QString &value) {
+	localFilename = value;
 }

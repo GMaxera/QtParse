@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QJsonObject>
+#include <QUrl>
 
 class QParseRequest;
 class QParse;
@@ -24,6 +25,8 @@ class QParseReply : public QObject {
 	Q_PROPERTY( bool isJson MEMBER isJson )
 	//! the Json object containing the reply in case of isJson is true
 	Q_PROPERTY( QJsonObject json MEMBER json )
+	//! the local URL where the file is stored
+	Q_PROPERTY( QUrl localUrl MEMBER localUrl )
 	//! if true means that an error occurred during the request on PARSE
 	Q_PROPERTY( bool hasError MEMBER hasError )
 	//! the error message, if any
@@ -37,11 +40,16 @@ public:
 	 */
 	QParseReply( QParseRequest* request, QParse* parent );
 
+	QParseRequest* getRequest() const;
+
 	bool getIsJson() const;
 	void setIsJson(bool value);
 
 	QJsonObject getJson() const;
 	void setJson(const QJsonObject &value);
+
+	QUrl getLocalUrl() const;
+	void setLocalUrl(const QUrl &value);
 
 	bool getHasError() const;
 	void setHasError(bool value);
@@ -62,6 +70,8 @@ private:
 	bool isJson;
 	//! the Json object containing the reply
 	QJsonObject json;
+	//! it point to a local file on cache
+	QUrl localUrl;
 	//! true means there was an error during the request
 	bool hasError;
 	//! the error message, if any

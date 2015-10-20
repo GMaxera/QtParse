@@ -1,5 +1,9 @@
 
+#include "qparse.h"
 #include "qparsetypes.h"
+#include "qparsereply.h"
+#include "qparserequest.h"
+#include <QDebug>
 
 QParseDate::QParseDate()
 	: json()
@@ -57,26 +61,36 @@ QString QParseDate::toISO() {
 	return json["iso"].toString();
 }
 
-QParseFile::QParseFile()
-	: json()
+QParseFile::QParseFile( QObject* parent )
+	: QObject(parent)
+	, json()
 	, url()
-	, name() {
+	, name()
+	, localUrl()
+	, status(NotValid) {
 }
 
-QParseFile::QParseFile( const QParseFile& src )
-	: json(src.json)
+QParseFile::QParseFile( const QParseFile& src, QObject* parent )
+	: QObject(parent)
+	, json(src.json)
 	, url(src.url)
-	, name(src.name) {
+	, name(src.name)
+	, localUrl(src.localUrl)
+	, status(src.status) {
 }
 
-QParseFile::QParseFile( QJsonObject fromParse )
-	: json()
+QParseFile::QParseFile( QJsonObject fromParse, QObject* parent )
+	: QObject(parent)
+	, json()
 	, url()
-	, name() {
+	, name()
+	, localUrl()
+	, status(NotCached) {
 	// there are two possible Json format used by PARSE
 	// one containing the __type and one not containing the __type
 	// so, check only the presence of name and url
 	if ( !fromParse.contains("url") || !fromParse.contains("name") ) {
+		qDebug() << "FROM PARSE:" << fromParse;
 		qFatal("QParseFile - wrong Json format passed to constructor");
 	}
 	json = fromParse;
@@ -87,10 +101,13 @@ QParseFile::QParseFile( QJsonObject fromParse )
 	name = json["name"].toString();
 }
 
-QParseFile::QParseFile( QUrl localFile )
-	: json()
+QParseFile::QParseFile( QUrl localFile, QObject* parent )
+	: QObject(parent)
+	, json()
 	, url()
-	, name() {
+	, name()
+	, localUrl()
+	, status(ToUpload) {
 	// it must be a local file
 	if ( !localFile.isLocalFile() ) {
 		qFatal("QParseFile - only local file are accepted by the constructor");
@@ -100,15 +117,8 @@ QParseFile::QParseFile( QUrl localFile )
 	// a valid representation of a PARSE file
 	json["__type"] = "Invalid";
 	url = localFile;
-	name = QString();
-}
-
-bool QParseFile::operator==( QParseFile const& other ) const {
-	return (url == other.url);
-}
-
-bool QParseFile::operator!=( QParseFile const& other ) const {
-	return (url != other.url);
+	name = localFile.fileName();
+	localUrl = localFile;
 }
 
 QUrl QParseFile::getUrl() const {
@@ -121,4 +131,45 @@ QString QParseFile::getName() const {
 
 QJsonObject QParseFile::toJson() {
 	return json;
+}
+
+bool QParseFile::isValid() {
+	return (status != NotValid);
+}
+
+QUrl QParseFile::getLocalUrl() const {
+	return localUrl;
+}
+
+void QParseFile::setLocalUrl(const QUrl &value) {
+	localUrl = value;
+	emit localUrlChanged( localUrl );
+}
+
+QParseFile::Status QParseFile::getStatus() const {
+	return status;
+}
+
+void QParseFile::setStatus(const Status &value) {
+	status = value;
+	emit statusChanged( status );
+}
+
+void QParseFile::pull() {
+	if ( status == NotCached ) {
+		setStatus( Caching );
+		QParseRequest* request = new QParseRequest(this);
+		QParseReply* reply = QParse::instance()->get( request );
+		connect( reply, &QParseReply::finished, [this](QParseReply* reply) {
+			setLocalUrl( reply->getLocalUrl() );
+			setStatus( Cached );
+			emit cached( localUrl );
+		});
+	}
+	if ( status == Cached ) {
+		qDebug() << "DIRECT EMIT THE SIGNAL";
+		// directly emit to notify who rely on this signal
+		emit cached( localUrl );
+	}
+	qDebug() << "STATUS" << status;
 }
