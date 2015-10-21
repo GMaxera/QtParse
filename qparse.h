@@ -45,6 +45,9 @@ class QParse : public QObject {
 	//! this allow to bind the logged user to QML properties
 	Q_PROPERTY( QParseUser* me READ getMe NOTIFY meChanged )
 public:
+	//! used by QParseRequest and QParseQuery to set the desider cache behavior
+	enum CacheControl { AlwaysCache, AlwaysNetwork };
+	Q_ENUM( CacheControl )
 	//! return the singleton instance of CloudInterface
 	static QParse* instance();
 public slots:
@@ -52,6 +55,8 @@ public slots:
 	void setAppId(const QString &value);
 	QString getRestKey() const;
 	void setRestKey(const QString &value);
+	QString getGCMSenderId();
+	void setGCMSenderId(const QString& value);
 	/*! return the Json value of the specified PARSE config
 	 *  \note before access to any app config, make sure you downloaded the app config
 	 *		  with updateAppConfigValues
@@ -59,6 +64,15 @@ public slots:
 	QJsonValue getAppConfigValue( QString key );
 	//! update the app config values
 	void updateAppConfigValues();
+
+	/*! return the Json value of the specified PARSE Installation field
+	 *  \note before access to any installation field, make sure you created a valid one
+	 *		  with updateInstallation
+	 */
+	QJsonValue getInstallationValue( QString key );
+	//! update/create an Installation object on PARSE
+	void updateInstallation();
+
 	//! return the logged user; a NULL pointer means no user is logged in
 	QParseUser* getMe();
 	//! Perform a get request on PARSE
@@ -89,6 +103,12 @@ private:
 	//! PARSE Keys
 	QString appId;
 	QString restKey;
+
+	//! Data for creating Installation object
+	QString gcmSenderId;
+	QString deviceToken;
+	//! The installation data
+	QJsonObject installation;
 
 	//! The App config
 	QJsonObject appConfig;

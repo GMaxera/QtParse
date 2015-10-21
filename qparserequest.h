@@ -5,6 +5,7 @@
 #include <QList>
 #include <QPair>
 #include <QString>
+#include "qparse.h"
 #include "qparsetypes.h"
 
 class QParseObject;
@@ -23,8 +24,8 @@ class QParseRequest : public QObject {
 	Q_PROPERTY( QParseObject* parseObject MEMBER parseObject )
 	//! the Parse File object of this request (if set and valid)
 	Q_PROPERTY( QParseFile* parseFile MEMBER parseFile )
-	//! the local file to store the downloaded file in case the request was a Parse file download
-	Q_PROPERTY( QString localFilename MEMBER localFilename )
+	//! the cache control
+	Q_PROPERTY( QParse::CacheControl cacheControl MEMBER cacheControl )
 public:
 	/*! constructor
 	 *  \param parseClassName is the name of the Parse class used for creating the endpoint on the underlying
@@ -53,8 +54,8 @@ public:
 	QParseFile* getParseFile() const;
 	void setParseFile(QParseFile* value);
 
-	QString getLocalFilename() const;
-	void setLocalFilename(const QString &value);
+	QParse::CacheControl getCacheControl() const;
+	void setCacheControl(const QParse::CacheControl &value);
 
 	/*! add the option and its value to the request
 	 *  \param name is the name of option (like 'include', 'where', etc)
@@ -72,8 +73,8 @@ private:
 	QParseObject* parseObject;
 	//! the parse file object of this request (if any)
 	QParseFile* parseFile;
-	//! local Filename where to save the downloaded file from PARSE
-	QString localFilename;
+	//! the cache control to use
+	QParse::CacheControl cacheControl;
 	//! these are used for get network requests
 	QList< QPair<QString,QString> > params;
 };

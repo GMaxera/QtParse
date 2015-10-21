@@ -163,6 +163,7 @@ void QParseFile::pull() {
 		connect( reply, &QParseReply::finished, [this](QParseReply* reply) {
 			setLocalUrl( reply->getLocalUrl() );
 			setStatus( Cached );
+			qDebug() << "STATUS" << status << "EMITTING SIGNAL";
 			emit cached( localUrl );
 		});
 	}

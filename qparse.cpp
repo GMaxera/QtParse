@@ -20,12 +20,14 @@
 #include <QTimer>
 #include <QDir>
 #include <QSettings>
+#include <QtQml>
 
 QParse::QParse(QObject *parent)
 	: QObject(parent) {
 	// register metatypes
 	qRegisterMetaType<QParseDate>("QParseDate");
 	//qRegisterMetaType<QParseFile>("QParseFile");
+	qmlRegisterType<QParseFile>("org.gmaxera.qparse", 1, 0, "ParseFile");
 	// initialize the singleton
 	cacheDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/QParseCache";
 	QDir dir(cacheDir);
@@ -64,6 +66,14 @@ void QParse::setAppId(const QString &value) {
 	appId = value;
 }
 
+QString QParse::getGCMSenderId() {
+	return gcmSenderId;
+}
+
+void QParse::setGCMSenderId(const QString& value) {
+	gcmSenderId = value;
+}
+
 QJsonValue QParse::getAppConfigValue( QString key ) {
 	return appConfig[key];
 }
@@ -86,6 +96,10 @@ void QParse::updateAppConfigValues() {
 		}
 		net->get(request);
 	}
+}
+
+QJsonValue QParse::getInstallationValue( QString key ) {
+	return installation[key];
 }
 
 QParseUser* QParse::getMe() {
@@ -149,6 +163,17 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 					appConfig = data["params"].toObject();
 					emit appConfigChanged();
 				}
+			}
+		// check the special case of PARSE Installation
+		} else if ( reply->url() == QUrl("https://api.parse.com/1/installations") ) {
+			if ( reply->error() == QNetworkReply::NoError ) {
+				//QSettings cacheSets( cacheDir+"/"+cacheIni, QSettings::IniFormat, this );
+				//cacheSets.setIniCodec("UTF-8");
+				QJsonObject data = QJsonDocument::fromJson( reply->readAll() ).object();
+				foreach( QString key, data.keys() ) {
+					installation[key] = data[key];
+				}
+				qDebug() << "INSTALLATION REPLY" << installation;
 			}
 		} else {
 			qDebug() << "QParse Error - Not reply into operations map !!";
@@ -220,7 +245,7 @@ void QParse::processOperationsQueue() {
 		}
 	}
 	// it only perform a network request if there is no cached data (or if it's invalid)
-	if ( isRequestCached(endpoint) ) {
+	if ( data->parseRequest->getCacheControl() == QParse::AlwaysCache && isRequestCached(endpoint) ) {
 		// automatically reply with cached data
 		fillWithCachedData( endpoint, data->parseReply );
 		emit (data->parseReply->finished(data->parseReply));

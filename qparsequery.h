@@ -11,16 +11,23 @@
  */
 class QParseQuery : public QObject {
 	Q_OBJECT
+	//! the cache control
+	Q_PROPERTY( QParse::CacheControl cacheControl MEMBER cacheControl )
 public:
 	/*! constructor a new query */
 	template<class ParseObject>
 	static QParseQuery* create() {
 		ParseObject p;
 		return new QParseQuery(p.parseClassName(), ParseObject::staticMetaObject);
-	}
+	}	
 public slots:
+	//! specify how to order
+	void orderBy( QString property, bool descending=false );
 	//! execute the query
 	void query();
+
+	QParse::CacheControl getCacheControl() const;
+	void setCacheControl(const QParse::CacheControl &value);
 signals:
 	//! return the all retrieved objects
 	void queryResults( QList<QParseObject*> results );
@@ -32,12 +39,14 @@ private slots:
 	void onQueryReply( QParseReply* reply );
 private:
 	// disable public constructors
-	QParseQuery( QString parseClassName, QMetaObject metaParseObject )
-		: QObject(QParse::instance())
-		, metaParseObject(metaParseObject)
-		, parseClassName(parseClassName) {
-	}
+	QParseQuery( QString parseClassName, QMetaObject metaParseObject );
 	Q_DISABLE_COPY( QParseQuery )
+
+	//! the cache control to use
+	QParse::CacheControl cacheControl;
+
+	//! the underlying QParseRequest to use
+	QParseRequest* queryRequest;
 
 	//! the QMetaObject used for constructing the right QParseObject
 	QMetaObject metaParseObject;

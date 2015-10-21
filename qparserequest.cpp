@@ -7,6 +7,7 @@ QParseRequest::QParseRequest( QString parseClassName )
 	, parseClassName(parseClassName)
 	, parseObject(NULL)
 	, parseFile(NULL)
+	, cacheControl(QParse::AlwaysCache)
 	, params() {
 }
 
@@ -15,6 +16,7 @@ QParseRequest::QParseRequest( QParseFile* parseFile )
 	, parseClassName()
 	, parseObject(NULL)
 	, parseFile(parseFile)
+	, cacheControl(QParse::AlwaysCache)
 	, params() {
 }
 
@@ -24,6 +26,14 @@ void QParseRequest::addOption( QString name, QString value ) {
 
 QList< QPair<QString,QString> > QParseRequest::getOptions() {
 	return params;
+}
+
+QParse::CacheControl QParseRequest::getCacheControl() const {
+	return cacheControl;
+}
+
+void QParseRequest::setCacheControl(const QParse::CacheControl &value) {
+	cacheControl = value;
 }
 
 QParseFile* QParseRequest::getParseFile() const {
@@ -44,12 +54,4 @@ void QParseRequest::setParseObject(QParseObject *value) {
 
 QString QParseRequest::getParseClassName() const {
     return parseClassName;
-}
-
-QString QParseRequest::getLocalFilename() const {
-	return localFilename;
-}
-
-void QParseRequest::setLocalFilename(const QString &value) {
-	localFilename = value;
 }

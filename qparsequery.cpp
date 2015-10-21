@@ -5,9 +5,24 @@
 #include <QJsonObject>
 #include <QDebug>
 
+QParseQuery::QParseQuery( QString parseClassName, QMetaObject metaParseObject )
+	: QObject(QParse::instance())
+	, cacheControl(QParse::AlwaysCache)
+	, metaParseObject(metaParseObject)
+	, parseClassName(parseClassName) {
+	queryRequest = new QParseRequest(parseClassName);
+}
+
+void QParseQuery::orderBy( QString property, bool descending ) {
+	if ( descending ) {
+		queryRequest->addOption( "order", QString("-")+property );
+	} else {
+		queryRequest->addOption( "order", property );
+	}
+}
+
 void QParseQuery::query() {
-	QParseRequest* query = new QParseRequest(parseClassName);
-	QParseReply* reply = QParse::instance()->get( query );
+	QParseReply* reply = QParse::instance()->get( queryRequest );
 	connect( reply, &QParseReply::finished, this, &QParseQuery::onQueryReply );
 }
 
@@ -28,4 +43,13 @@ void QParseQuery::onQueryReply( QParseReply* reply ) {
 	}
 	emit queryResults( parseObjects );
 	reply->deleteLater();
+}
+
+QParse::CacheControl QParseQuery::getCacheControl() const {
+	return cacheControl;
+}
+
+void QParseQuery::setCacheControl(const QParse::CacheControl &value) {
+	queryRequest->setCacheControl( value );
+	cacheControl = value;
 }

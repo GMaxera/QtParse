@@ -1,4 +1,6 @@
 
+QT += concurrent
+
 INCLUDEPATH += $$PWD
 
 SOURCES += \
@@ -19,3 +21,8 @@ HEADERS += \
 	$$PWD/qparsereply.h \
 	$$PWD/qparsequery.h
 
+android {
+	QT += androidextras
+	SOURCES += $$PWD/qparse_android.cpp
+} else:ios {
+}
