@@ -56,7 +56,7 @@ public:
 	//! return the list of properties used on PARSE for this object
 	virtual QStringList parseProperties() { return QStringList(); }
 public slots:
-	QString getObjectId();
+	QString getObjectId() const;
 	QParseDate getCreatedAt() const;
 	QParseDate getUpdatedAt() const;
 	//! indicate if there is an updating operation ongoing

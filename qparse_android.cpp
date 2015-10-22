@@ -5,7 +5,12 @@
 #include <QtAndroidExtras>
 #include <QtConcurrent>
 
-void QParse::updateInstallation() {
+void QParse::createInstallation() {
+	if ( installation.contains("objectId") ) {
+		// Nothing to do !!!
+		// IN FUTURE IT SHOULD CHECK IF THE TOKEN IS STILL VALID
+		return;
+	}
 	QAndroidJniObject activity = QtAndroid::androidActivity();
 
 	// Retrieve the deviceToken
@@ -38,6 +43,7 @@ void QParse::updateInstallation() {
 	installation["pushType"] = "gcm";
 	installation["deviceToken"] = deviceToken;
 	installation["GCMSenderId"] = gcmSenderId;
+	installation["readNews"] = QJsonArray();
 	QJsonDocument jsonDoc(installation);
 	net->post( request, jsonDoc.toJson(QJsonDocument::Compact) );
 }

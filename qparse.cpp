@@ -34,6 +34,7 @@ QParse::QParse(QObject *parent)
 	dir.mkpath(cacheDir);
 	cacheIni = "cache.ini";
 	loadCacheInfoData();
+	loadInstallation();
 	user = NULL;
 	net = new QNetworkAccessManager(this);
 	connect( net, SIGNAL(finished(QNetworkReply*)), this, SLOT(onRequestFinished(QNetworkReply*)) );
@@ -78,8 +79,8 @@ QJsonValue QParse::getAppConfigValue( QString key ) {
 	return appConfig[key];
 }
 
-void QParse::updateAppConfigValues() {
-	if ( isRequestCached(QUrl("https://api.parse.com/1/config")) ) {
+void QParse::pullAppConfigValues( bool forceNetwork ) {
+	if ( !forceNetwork && isRequestCached(QUrl("https://api.parse.com/1/config")) ) {
 		QJsonObject data = getCachedJson( QUrl("https://api.parse.com/1/config") );
 		if ( data.contains("params") ) {
 			appConfig = data["params"].toObject();
@@ -100,6 +101,52 @@ void QParse::updateAppConfigValues() {
 
 QJsonValue QParse::getInstallationValue( QString key ) {
 	return installation[key];
+}
+
+void QParse::setInstallationValue( QString key, QJsonValue value ) {
+	if ( !installationChangedKeys.contains(key) ) {
+		installationChangedKeys.append( key );
+	}
+	installation[key] = value;
+}
+
+void QParse::pullInstallation() {
+	if ( !installation.contains("objectId") ) return;
+	// DO NOTHING IF THERE ARE LOCAL CHANGES !
+	if ( !installationChangedKeys.isEmpty() ) return;
+	// Prepare the request
+	// direct request, the reply will be handled on onRequestFinished
+	QNetworkRequest request(QUrl(QString("https://api.parse.com/1/installations/")+installation["objectId"].toString()));
+	request.setRawHeader("X-Parse-Application-Id", appId.toLatin1());
+	request.setRawHeader("X-Parse-REST-API-Key", restKey.toLatin1());
+	if ( user ) {
+		// if there is a user logged in, send also the session token
+		request.setRawHeader("X-Parse-Session-Token", user->getToken().toLatin1());
+	}
+	request.setRawHeader("Content-Type", "application/json");
+	net->get( request );
+}
+
+void QParse::pushInstallation() {
+	if ( !installation.contains("objectId") ) return;
+	if ( installationChangedKeys.isEmpty() ) return;
+	// Prepare the request
+	// direct request, the reply will be handled on onRequestFinished
+	QNetworkRequest request(QUrl(QString("https://api.parse.com/1/installations/")+installation["objectId"].toString()));
+	request.setRawHeader("X-Parse-Application-Id", appId.toLatin1());
+	request.setRawHeader("X-Parse-REST-API-Key", restKey.toLatin1());
+	if ( user ) {
+		// if there is a user logged in, send also the session token
+		request.setRawHeader("X-Parse-Session-Token", user->getToken().toLatin1());
+	}
+	request.setRawHeader("Content-Type", "application/json");
+	QJsonObject changes;
+	foreach( QString key, installationChangedKeys ) {
+		changes[key] = installation[key];
+	}
+	QJsonDocument jsonDoc(changes);
+	qDebug() << "PUSHING INSTALLATION CHANGES" << changes;
+	net->put( request, jsonDoc.toJson(QJsonDocument::Compact) );
 }
 
 QParseUser* QParse::getMe() {
@@ -165,15 +212,25 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 				}
 			}
 		// check the special case of PARSE Installation
-		} else if ( reply->url() == QUrl("https://api.parse.com/1/installations") ) {
+		} else if ( reply->url()==QUrl("https://api.parse.com/1/installations") ||
+					QUrl("https://api.parse.com/1/installations").isParentOf(reply->url()) ) {
 			if ( reply->error() == QNetworkReply::NoError ) {
-				//QSettings cacheSets( cacheDir+"/"+cacheIni, QSettings::IniFormat, this );
-				//cacheSets.setIniCodec("UTF-8");
 				QJsonObject data = QJsonDocument::fromJson( reply->readAll() ).object();
-				foreach( QString key, data.keys() ) {
-					installation[key] = data[key];
+				if ( data.contains("error") ) {
+					qDebug() << "ERROR ON INSTALLATION: " << data;
+				} else if ( reply->operation() != QNetworkAccessManager::PutOperation ) {
+					// GET or POST, in both case update the local object
+					foreach( QString key, data.keys() ) {
+						installation[key] = data[key];
+					}
+					saveInstallation();
+					qDebug() << "INSTALLATION REPLY" << installation;
+				} else {
+					// PUT operation
+					installationChangedKeys.clear();
+					saveInstallation();
+					qDebug() << "PUSHED CHANGES" << data;
 				}
-				qDebug() << "INSTALLATION REPLY" << installation;
 			}
 		} else {
 			qDebug() << "QParse Error - Not reply into operations map !!";
@@ -364,14 +421,45 @@ QJsonObject QParse::getCachedJson( QUrl url ) {
 	return json;
 }
 
+void QParse::saveInstallation() {
+	// if objectId is not present, the installation object is not valid
+	if ( !installation.contains("objectId") ) return;
+	// save on the installation.json
+	QFile cacheFile( cacheDir+"/installation.json" );
+	if ( !cacheFile.open( QIODevice::WriteOnly | QIODevice::Truncate ) ) {
+		qDebug() << "Destination" << (cacheDir+"/installation.json");
+		qFatal( "Cannot write on cache directory !!" );
+	}
+	QJsonDocument jsonDoc( installation );
+	cacheFile.write( jsonDoc.toJson(QJsonDocument::Compact) );
+	cacheFile.flush();
+	cacheFile.close();
+}
+
+void QParse::loadInstallation() {
+	QString installationFile = cacheDir+"/installation.json";
+	if ( !QFile::exists(installationFile) ) return;
+	// load the installation on cache disk
+	QFile cacheFile( installationFile );
+	if ( !cacheFile.open( QIODevice::ReadOnly ) ) {
+		qFatal( "Cannot read on cache directory !!");
+	}
+	installation = QJsonDocument::fromJson( cacheFile.readAll() ).object();
+	cacheFile.close();
+}
+
 QString QParse::getUniqueCacheFilename() {
 	int lenght = 8;
 	while( true ) {
-		QString str = cacheDir+"/";
+		QString str;
 		for( int i=0; i<lenght; i++ ) {
 			str.append( QChar(97+qrand()%25) );
 		}
-		str.append(".json");
+		// !!! Reserved name of installation.json
+		if ( str == QString("installation.json") ) {
+			continue;
+		}
+		str = QString("%1/%2.json").arg(cacheDir).arg(str);
 		if ( !QFile::exists(str) ) {
 			return str;
 		}

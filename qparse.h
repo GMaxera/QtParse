@@ -63,15 +63,30 @@ public slots:
 	 */
 	QJsonValue getAppConfigValue( QString key );
 	//! update the app config values
-	void updateAppConfigValues();
+	void pullAppConfigValues( bool forceNetwork=false );
 
 	/*! return the Json value of the specified PARSE Installation field
 	 *  \note before access to any installation field, make sure you created a valid one
 	 *		  with updateInstallation
 	 */
 	QJsonValue getInstallationValue( QString key );
-	//! update/create an Installation object on PARSE
-	void updateInstallation();
+	//! it's up to client app to deal with the data into intallation fields
+	void setInstallationValue( QString key, QJsonValue value );
+	//! create an Installation object on PARSE if not existing yet
+	void createInstallation();
+	/*! update the local Installation object pulling data from PARSE
+	 *  \warning if the local copy of installation has been changed but not pushed
+	 *           then the pullInstallation will do nothing, in order to avoid to override
+	 *           the local changes to the installation object.
+	 */
+	void pullInstallation();
+	/*! push local Installation object to PARSE
+	 *  \warning the push send the local changes to PARSE without checking if on PARSE
+	 *           such fields has been changed.
+	 *           This means that you SHOULD never change from PARSE (i.e. with cloud code)
+	 *           installation field that your app can change using the pushInstallation method
+	 */
+	void pushInstallation();
 
 	//! return the logged user; a NULL pointer means no user is logged in
 	QParseUser* getMe();
@@ -109,6 +124,8 @@ private:
 	QString deviceToken;
 	//! The installation data
 	QJsonObject installation;
+	//! the list of keys changed locally
+	QStringList installationChangedKeys;
 
 	//! The App config
 	QJsonObject appConfig;
@@ -175,6 +192,10 @@ private:
 	void fillWithCachedData( QUrl url, QParseReply* reply );
 	//! return the Json object cached at given url
 	QJsonObject getCachedJson( QUrl url );
+	//! save installation data on cache dir
+	void saveInstallation();
+	//! load installation (if any) from the cache dir
+	void loadInstallation();
 
 	//! return a unique file name into the cacheDir (return full path)
 	QString getUniqueCacheFilename();

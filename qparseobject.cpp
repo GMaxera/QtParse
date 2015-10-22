@@ -25,7 +25,7 @@ QParseObject::QParseObject(QJsonObject jsonData, QObject* parent)
 	updatedAt = QParseDate( jsonData["updatedAt"].toString() );
 }
 
-QString QParseObject::getObjectId() {
+QString QParseObject::getObjectId() const {
 	return objectId;
 }
 
