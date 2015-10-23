@@ -21,8 +21,10 @@ public:
 		return new QParseQuery(p.parseClassName(), ParseObject::staticMetaObject);
 	}	
 public slots:
+	//! create a where clause
+	QParseQuery* whereIn( QString property, QStringList values );
 	//! specify how to order
-	void orderBy( QString property, bool descending=false );
+	QParseQuery* orderBy( QString property, bool descending=false );
 	//! execute the query
 	void query();
 
@@ -47,6 +49,9 @@ private:
 
 	//! the underlying QParseRequest to use
 	QParseRequest* queryRequest;
+
+	//! the JsonObject containing the Where clause
+	QJsonObject where;
 
 	//! the QMetaObject used for constructing the right QParseObject
 	QMetaObject metaParseObject;

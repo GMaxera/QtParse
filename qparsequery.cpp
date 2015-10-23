@@ -3,6 +3,7 @@
 #include "qparsereply.h"
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QJsonDocument>
 #include <QDebug>
 
 QParseQuery::QParseQuery( QString parseClassName, QMetaObject metaParseObject )
@@ -13,15 +14,25 @@ QParseQuery::QParseQuery( QString parseClassName, QMetaObject metaParseObject )
 	queryRequest = new QParseRequest(parseClassName);
 }
 
-void QParseQuery::orderBy( QString property, bool descending ) {
+QParseQuery* QParseQuery::whereIn(QString property, QStringList values) {
+	QJsonObject in;
+	in["$in"] = QJsonArray::fromStringList( values );
+	where[property] = in;
+	return this;
+}
+
+QParseQuery* QParseQuery::orderBy( QString property, bool descending ) {
 	if ( descending ) {
 		queryRequest->addOption( "order", QString("-")+property );
 	} else {
 		queryRequest->addOption( "order", property );
 	}
+	return this;
 }
 
 void QParseQuery::query() {
+	// add the where clause
+	queryRequest->addOption( "where", QJsonDocument(where).toJson(QJsonDocument::Compact) );
 	QParseReply* reply = QParse::instance()->get( queryRequest );
 	connect( reply, &QParseReply::finished, this, &QParseQuery::onQueryReply );
 }
