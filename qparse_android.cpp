@@ -43,7 +43,6 @@ void QParse::createInstallation() {
 	installation["pushType"] = "gcm";
 	installation["deviceToken"] = deviceToken;
 	installation["GCMSenderId"] = gcmSenderId;
-	installation["readNews"] = QJsonArray();
 	QJsonDocument jsonDoc(installation);
 	net->post( request, jsonDoc.toJson(QJsonDocument::Compact) );
 }

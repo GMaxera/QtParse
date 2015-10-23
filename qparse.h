@@ -50,6 +50,10 @@ public:
 	Q_ENUM( CacheControl )
 	//! return the singleton instance of CloudInterface
 	static QParse* instance();
+#ifdef Q_OS_IOS
+	//! \internal create and send a request for registering the device token
+	void sendInstallationPostRequest( QString token );
+#endif
 public slots:
 	QString getAppId() const;
 	void setAppId(const QString &value);
