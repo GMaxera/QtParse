@@ -91,6 +91,12 @@ public slots:
 	 *           installation field that your app can change using the pushInstallation method
 	 */
 	void pushInstallation();
+	/*! check if it has been subscribed to the specified channels,
+	 *  if not update the installation and push the data to PARSE.com
+	 *
+	 *  It's safe to call this method multiple time with the same data
+	 */
+	void subscribeToChannels( QStringList channels );
 
 	//! return the logged user; a NULL pointer means no user is logged in
 	QParseUser* getMe();

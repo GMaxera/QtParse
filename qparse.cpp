@@ -145,8 +145,31 @@ void QParse::pushInstallation() {
 		changes[key] = installation[key];
 	}
 	QJsonDocument jsonDoc(changes);
-	qDebug() << "PUSHING INSTALLATION CHANGES" << changes;
 	net->put( request, jsonDoc.toJson(QJsonDocument::Compact) );
+}
+
+void QParse::subscribeToChannels( QStringList channels ) {
+	// check if there is a valid local installation data
+	if ( !installation.contains("objectId") ) return;
+	// check any previous channels and update the array
+	QJsonArray subscriptions;
+	if ( installation.contains("channels") ) {
+		subscriptions = installation["channels"].toArray();
+	}
+	bool changed = false;
+	foreach( QString channel, channels ) {
+		if ( !subscriptions.contains( channel ) ) {
+			subscriptions.append( channel );
+			if ( !installationChangedKeys.contains("channels") ) {
+				installationChangedKeys.append( "channels" );
+			}
+			changed = true;
+		}
+	}
+	if ( changed ) {
+		installation["channels"] = subscriptions;
+		pushInstallation();
+	}
 }
 
 QParseUser* QParse::getMe() {
