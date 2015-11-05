@@ -16,9 +16,12 @@ class QParseQuery : public QObject {
 public:
 	/*! constructor a new query */
 	template<class ParseObject>
-	static QParseQuery* create() {
-		ParseObject p;
-		return new QParseQuery(p.parseClassName(), ParseObject::staticMetaObject);
+	static QParseQuery* create( QString className=QString() ) {
+		if ( className.isEmpty() ) {
+			ParseObject p;
+			className = p.parseClassName();
+		}
+		return new QParseQuery(className, ParseObject::staticMetaObject);
 	}	
 public slots:
 	//! create a where clause
