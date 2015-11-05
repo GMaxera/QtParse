@@ -19,7 +19,8 @@ QParseDate::QParseDate( QJsonObject fromParse )
 	: json()
 	, dateTime() {
 	if ( !fromParse.contains("__type") || !fromParse.contains("iso") ) {
-		qFatal("QParseDate - wrong Json format passed to constructor");
+		qDebug("QParseDate - wrong Json format passed to constructor");
+		return;
 	}
 	json = fromParse;
 	dateTime = QDateTime::fromString( json["iso"].toString(), "yyyy-MM-dd'T'HH:mm:ss.zzz'Z'");
@@ -91,7 +92,9 @@ QParseFile::QParseFile( QJsonObject fromParse, QObject* parent )
 	// so, check only the presence of name and url
 	if ( !fromParse.contains("url") || !fromParse.contains("name") ) {
 		qDebug() << "FROM PARSE:" << fromParse;
-		qFatal("QParseFile - wrong Json format passed to constructor");
+		qDebug("QParseFile - wrong Json format passed to constructor");
+		status = NotValid;
+		return;
 	}
 	json = fromParse;
 	if ( !json.contains("__type") ) {
