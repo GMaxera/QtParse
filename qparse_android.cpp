@@ -6,11 +6,6 @@
 #include <QtConcurrent>
 
 void QParse::createInstallation() {
-	if ( installation.contains("objectId") ) {
-		// Nothing to do !!!
-		// IN FUTURE IT SHOULD CHECK IF THE TOKEN IS STILL VALID
-		return;
-	}
 	QAndroidJniObject activity = QtAndroid::androidActivity();
 
 	// Retrieve the deviceToken
@@ -31,6 +26,17 @@ void QParse::createInstallation() {
 	if (env->ExceptionCheck()) {
 		// Handle exception here.
 		env->ExceptionClear();
+	}
+
+	if ( installation.contains("deviceToken") ) {
+		QString currDeviceToken = installation["deviceToken"].toString();
+		if ( deviceToken == currDeviceToken ) {
+			qDebug() << "VALID DEVICE TOKEN";
+			return;
+		} else {
+			installation = QJsonObject();
+			qDebug() << "INVALID DEVICE TOKEN: CREATE A NEW INSTALLATION ROW";
+		}
 	}
 
 	// Prepare the request

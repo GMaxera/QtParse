@@ -29,7 +29,8 @@ QParse::QParse(QObject *parent)
 	//qRegisterMetaType<QParseFile>("QParseFile");
 	qmlRegisterType<QParseFile>("org.gmaxera.qparse", 1, 0, "ParseFile");
 	// initialize the singleton
-	cacheDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/QParseCache";
+	cacheDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)+"/QParseCache";
+	qDebug() << "QParse CACHEDIR: " << cacheDir;
 	QDir dir(cacheDir);
 	dir.mkpath(cacheDir);
 	cacheIni = "cache.ini";
@@ -237,6 +238,7 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 		// check the special case of PARSE Installation
 		} else if ( reply->url()==QUrl("https://api.parse.com/1/installations") ||
 					QUrl("https://api.parse.com/1/installations").isParentOf(reply->url()) ) {
+			qDebug() << "IM HERE FUCK";
 			if ( reply->error() == QNetworkReply::NoError ) {
 				QJsonObject data = QJsonDocument::fromJson( reply->readAll() ).object();
 				if ( data.contains("error") ) {
@@ -254,6 +256,8 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 					saveInstallation();
 					qDebug() << "PUSHED CHANGES" << data;
 				}
+			} else {
+				qDebug() << "ERROR: " << reply->errorString();
 			}
 		} else {
 			qDebug() << "QParse Error - Not reply into operations map !!";
