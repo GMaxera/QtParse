@@ -238,7 +238,6 @@ void QParse::onRequestFinished(QNetworkReply *reply) {
 		// check the special case of PARSE Installation
 		} else if ( reply->url()==QUrl("https://api.parse.com/1/installations") ||
 					QUrl("https://api.parse.com/1/installations").isParentOf(reply->url()) ) {
-			qDebug() << "IM HERE FUCK";
 			if ( reply->error() == QNetworkReply::NoError ) {
 				QJsonObject data = QJsonDocument::fromJson( reply->readAll() ).object();
 				if ( data.contains("error") ) {
