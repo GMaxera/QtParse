@@ -102,6 +102,11 @@ QParseFile::QParseFile( QJsonObject fromParse, QObject* parent )
 	}
 	url = QUrl( json["url"].toString() );
 	name = json["name"].toString();
+	QUrl localCache = QParse::instance()->getCachedUrlOf( url );
+	if ( localCache.isLocalFile() ) {
+		localUrl = localCache;
+		status = Cached;
+	}
 }
 
 QParseFile::QParseFile( QUrl localFile, QObject* parent )
@@ -166,14 +171,11 @@ void QParseFile::pull() {
 		connect( reply, &QParseReply::finished, [this](QParseReply* reply) {
 			setLocalUrl( reply->getLocalUrl() );
 			setStatus( Cached );
-			qDebug() << "STATUS" << status << "EMITTING SIGNAL";
 			emit cached( localUrl );
 		});
 	}
 	if ( status == Cached ) {
-		qDebug() << "DIRECT EMIT THE SIGNAL";
 		// directly emit to notify who rely on this signal
 		emit cached( localUrl );
 	}
-	qDebug() << "STATUS" << status;
 }

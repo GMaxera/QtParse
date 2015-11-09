@@ -5,7 +5,7 @@
 #include <QtAndroidExtras>
 #include <QtConcurrent>
 
-void QParse::createInstallation() {
+void QParse::createInstallation( QStringList channels, QString timeZone ) {
 	QAndroidJniObject activity = QtAndroid::androidActivity();
 
 	// Retrieve the deviceToken
@@ -49,6 +49,12 @@ void QParse::createInstallation() {
 	installation["pushType"] = "gcm";
 	installation["deviceToken"] = deviceToken;
 	installation["GCMSenderId"] = gcmSenderId;
+	if ( !channels.isEmpty() ) {
+		installation["channels"] = QJsonArray::fromStringList(channels);
+	}
+	if ( !timeZone.isEmpty() ) {
+		installation["timeZone"] = timeZone;
+	}
 	QJsonDocument jsonDoc(installation);
 	net->post( request, jsonDoc.toJson(QJsonDocument::Compact) );
 }

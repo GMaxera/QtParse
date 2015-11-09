@@ -420,6 +420,14 @@ bool QParse::isRequestCached( QUrl url ) {
 	return cache.contains(url);
 }
 
+QUrl QParse::getCachedUrlOf( QUrl remoteFile ) {
+	if ( cache.contains(remoteFile) ) {
+		CacheData cacheData = cache[remoteFile];
+		return cacheData.localFile;
+	}
+	return QUrl();
+}
+
 void QParse::fillWithCachedData( QUrl url, QParseReply* reply ) {
 	CacheData cacheData = cache[url];
 	if ( reply->getIsJson() ) {

@@ -54,6 +54,8 @@ public:
 	//! \internal create and send a request for registering the device token
 	void sendInstallationPostRequest( QString token );
 #endif
+	//! \internal return (if cached) the local Url of the file; return empty if not cached
+	QUrl getCachedUrlOf( QUrl remoteFile );
 public slots:
 	QString getAppId() const;
 	void setAppId(const QString &value);
@@ -76,8 +78,14 @@ public slots:
 	QJsonValue getInstallationValue( QString key );
 	//! it's up to client app to deal with the data into intallation fields
 	void setInstallationValue( QString key, QJsonValue value );
-	//! create an Installation object on PARSE if not existing yet
-	void createInstallation();
+	/*! create an Installation object on PARSE if not existing yet
+	 *  \param channels the list of channels on which subscribe
+	 *  \param timeZone the timeZone to use
+	 *  \warning channels and timeZone are used only if the method has to create an installation entry,
+	 *		if the installation already exists this method does not perform any update to do so use
+	 *		subscribeToChannels method
+	 */
+	void createInstallation( QStringList channels=QStringList(), QString timeZone=QString() );
 	/*! update the local Installation object pulling data from PARSE
 	 *  \warning if the local copy of installation has been changed but not pushed
 	 *           then the pullInstallation will do nothing, in order to avoid to override

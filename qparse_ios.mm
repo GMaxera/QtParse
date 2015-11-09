@@ -29,11 +29,19 @@
 }
 @end
 
-void QParse::createInstallation() {
+void QParse::createInstallation( QStringList channels, QString timeZone ) {
 	if ( installation.contains("objectId") ) {
 		// Nothing to do !!!
 		// IN FUTURE IT SHOULD CHECK IF THE TOKEN IS STILL VALID
 		return;
+	}
+
+	// prepare the data about channels and timeZone
+	if ( !channels.isEmpty() ) {
+		installation["channels"] = QJsonArray::fromStringList(channels);
+	}
+	if ( !timeZone.isEmpty() ) {
+		installation["timeZone"] = timeZone;
 	}
 
 	if ([[UIApplication sharedApplication] respondsToSelector:@selector(registerUserNotificationSettings:)]) {
