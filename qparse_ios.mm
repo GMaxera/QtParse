@@ -36,7 +36,7 @@ void QParse::createInstallation() {
 		return;
 	}
 
-	if ([UIApplication respondsToSelector:@selector(registerUserNotificationSettings:)]) {
+	if ([[UIApplication sharedApplication] respondsToSelector:@selector(registerUserNotificationSettings:)]) {
 		UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:
 				UIUserNotificationTypeBadge |
 				UIUserNotificationTypeAlert |
