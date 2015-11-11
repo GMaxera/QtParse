@@ -388,7 +388,12 @@ void QParse::updateCache( QNetworkReply* reply, QParse::OperationData* opdata ) 
 	cacheData.createdAt = QDateTime::currentDateTime();
 	QString cacheFilename;
 	if ( cacheData.isJson ) {
-		cacheFilename = getUniqueCacheFilename();
+		if ( cache.contains(reply->url()) ) {
+			// use the same file again
+			cacheFilename = cache[reply->url()].localFile.toLocalFile();
+		} else {
+			cacheFilename = getUniqueCacheFilename();
+		}
 	} else {
 		cacheFilename = cacheDir+"/"+opdata->parseRequest->getParseFile()->getName();
 	}

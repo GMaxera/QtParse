@@ -32,7 +32,9 @@ QParseQuery* QParseQuery::orderBy( QString property, bool descending ) {
 
 void QParseQuery::query() {
 	// add the where clause
-	queryRequest->addOption( "where", QJsonDocument(where).toJson(QJsonDocument::Compact) );
+	if ( !where.isEmpty() ) {
+		queryRequest->addOption( "where", QJsonDocument(where).toJson(QJsonDocument::Compact) );
+	}
 	QParseReply* reply = QParse::instance()->get( queryRequest );
 	connect( reply, &QParseReply::finished, this, &QParseQuery::onQueryReply );
 }
