@@ -112,6 +112,7 @@ void QParse::setInstallationValue( QString key, QJsonValue value ) {
 }
 
 void QParse::pullInstallation() {
+	if ( net->networkAccessible() != QNetworkAccessManager::Accessible ) return;
 	if ( !installation.contains("objectId") ) return;
 	// DO NOTHING IF THERE ARE LOCAL CHANGES !
 	if ( !installationChangedKeys.isEmpty() ) return;
@@ -129,6 +130,7 @@ void QParse::pullInstallation() {
 }
 
 void QParse::pushInstallation() {
+	if ( net->networkAccessible() != QNetworkAccessManager::Accessible ) return;
 	if ( !installation.contains("objectId") ) return;
 	if ( installationChangedKeys.isEmpty() ) return;
 	// Prepare the request
@@ -380,11 +382,9 @@ void QParse::loadCacheInfoData() {
 		int size = bundleSets.beginReadArray("caches");
 		cacheSets.beginWriteArray("caches");
 		QStringList props;
-		props << "url" << "createdAt" << "isJson" << "localFile";
 		for( int i=0; i<size; i++ ) {
 			bundleSets.setArrayIndex(i);
 			cacheSets.setArrayIndex(i);
-			qDebug() << "SETTING LOCAL CACHE " << i;
 			foreach( QString prop, props ) {
 				cacheSets.setValue(prop, bundleSets.value(prop));
 			}
@@ -451,9 +451,10 @@ void QParse::updateCache( QNetworkReply* reply, QParse::OperationData* opdata ) 
 	cacheSets.setIniCodec("UTF-8");
 	cacheSets.beginWriteArray("caches");
 	int pos = 0;
-	foreach( CacheData cachep, cache.values() ) {
+	foreach( QUrl url, cache.keys() ) {
+		CacheData cachep = cache[url];
 		cacheSets.setArrayIndex(pos);
-		cacheSets.setValue("url", reply->url());
+		cacheSets.setValue("url", url);
 		cacheSets.setValue("isJson", cachep.isJson);
 		cacheSets.setValue("localFile", cachep.localFile.fileName());
 		cacheSets.setValue("createdAt", cachep.createdAt);
