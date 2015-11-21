@@ -362,6 +362,39 @@ void QParse::processOperationsQueue() {
 }
 
 void QParse::loadCacheInfoData() {
+	// bundled parse cache director
+#if defined(Q_OS_IOS)
+	QString bundleCacheDir = QString::fromLatin1("%1/parsecache").arg(QCoreApplication::applicationDirPath());
+#else
+	// suppose Android
+	QString bundleCacheDir = "assets:/parsecache";
+#endif
+
+	if ( !QFile::exists(cacheDir+"/"+cacheIni) && QFile::exists(bundleCacheDir+"/"+cacheIni) ) {
+		qDebug() << "COPYING BUNDLE CACHE INI TO LOCAL CACHE INI";
+		// first time here, take data from bundled parsecache
+		QSettings bundleSets( bundleCacheDir+"/"+cacheIni, QSettings::IniFormat, this );
+		QSettings cacheSets( cacheDir+"/"+cacheIni, QSettings::IniFormat, this );
+		bundleSets.setIniCodec("UTF-8");
+		cacheSets.setIniCodec("UTF-8");
+		int size = bundleSets.beginReadArray("caches");
+		cacheSets.beginWriteArray("caches");
+		QStringList props;
+		props << "url" << "createdAt" << "isJson" << "localFile";
+		for( int i=0; i<size; i++ ) {
+			bundleSets.setArrayIndex(i);
+			cacheSets.setArrayIndex(i);
+			qDebug() << "SETTING LOCAL CACHE " << i;
+			foreach( QString prop, props ) {
+				cacheSets.setValue(prop, bundleSets.value(prop));
+			}
+			cacheSets.setValue("bundled", true);
+		}
+		bundleSets.endArray();
+		cacheSets.endArray();
+		cacheSets.sync();
+	}
+
 	QSettings cacheSets( cacheDir+"/"+cacheIni, QSettings::IniFormat, this );
 	cacheSets.setIniCodec("UTF-8");
 	int size = cacheSets.beginReadArray("caches");
@@ -370,7 +403,12 @@ void QParse::loadCacheInfoData() {
 		QUrl url = cacheSets.value("url").toUrl();
 		CacheData cacheData;
 		cacheData.isJson = cacheSets.value("isJson").toBool();
-		cacheData.localFile = QUrl::fromLocalFile( cacheDir+"/"+cacheSets.value("localFile").toString() );
+		cacheData.bundled = cacheSets.value("bundled").toBool();
+		if ( cacheData.bundled ) {
+			cacheData.localFile = QUrl::fromLocalFile(bundleCacheDir+"/"+cacheSets.value("localFile").toString());
+		} else {
+			cacheData.localFile = QUrl::fromLocalFile( cacheDir+"/"+cacheSets.value("localFile").toString() );
+		}
 		cacheData.createdAt = cacheSets.value("createdAt").toDateTime();
 		cache[url] = cacheData;
 	}
@@ -406,18 +444,22 @@ void QParse::updateCache( QNetworkReply* reply, QParse::OperationData* opdata ) 
 	cacheFile.flush();
 	cacheFile.close();
 	cacheData.localFile = QUrl::fromLocalFile( cacheFilename );
+	cacheData.bundled = false;
 	cache[reply->url()] = cacheData;
 	// write down on settings on disk
 	QSettings cacheSets( cacheDir+"/"+cacheIni, QSettings::IniFormat, this );
 	cacheSets.setIniCodec("UTF-8");
-	int size = cacheSets.beginReadArray("caches");
-	cacheSets.endArray();
 	cacheSets.beginWriteArray("caches");
-	cacheSets.setArrayIndex(size);
-	cacheSets.setValue("url", reply->url());
-	cacheSets.setValue("isJson", cacheData.isJson);
-	cacheSets.setValue("localFile", cacheData.localFile.fileName());
-	cacheSets.setValue("createdAt", cacheData.createdAt);
+	int pos = 0;
+	foreach( CacheData cachep, cache.values() ) {
+		cacheSets.setArrayIndex(pos);
+		cacheSets.setValue("url", reply->url());
+		cacheSets.setValue("isJson", cachep.isJson);
+		cacheSets.setValue("localFile", cachep.localFile.fileName());
+		cacheSets.setValue("createdAt", cachep.createdAt);
+		cacheSets.setValue("bundled", cachep.bundled);
+		pos++;
+	}
 	cacheSets.endArray();
 }
 

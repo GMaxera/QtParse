@@ -193,6 +193,8 @@ private:
 		QUrl localFile;
 		//! date of creation
 		QDateTime createdAt;
+		//! true if the entry is bunbled into the app
+		bool bundled;
 	};
 	//! all cached data indexed by QUrl request
 	QMap<QUrl, CacheData> cache;
