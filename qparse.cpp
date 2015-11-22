@@ -382,6 +382,7 @@ void QParse::loadCacheInfoData() {
 		int size = bundleSets.beginReadArray("caches");
 		cacheSets.beginWriteArray("caches");
 		QStringList props;
+		props << "url" << "createdAt" << "isJson" << "localFile";
 		for( int i=0; i<size; i++ ) {
 			bundleSets.setArrayIndex(i);
 			cacheSets.setArrayIndex(i);
@@ -426,7 +427,7 @@ void QParse::updateCache( QNetworkReply* reply, QParse::OperationData* opdata ) 
 	cacheData.createdAt = QDateTime::currentDateTime();
 	QString cacheFilename;
 	if ( cacheData.isJson ) {
-		if ( cache.contains(reply->url()) ) {
+		if ( cache.contains(reply->url()) && !cache[reply->url()].bundled ) {
 			// use the same file again
 			cacheFilename = cache[reply->url()].localFile.toLocalFile();
 		} else {
