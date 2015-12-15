@@ -14,7 +14,6 @@
 //! Add a category to QIOSApplicationDelegate
 @interface QIOSApplicationDelegate (QParseApplicationDelegate)
 @end
-//! Now add method for handling the openURL from Facebook Login
 @implementation QIOSApplicationDelegate (QParseApplicationDelegate)
 - (void)application:(UIApplication *)app didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
 	NSString *token = [[deviceToken description] stringByTrimmingCharactersInSet: [NSCharacterSet characterSetWithCharactersInString:@"<>"]];
